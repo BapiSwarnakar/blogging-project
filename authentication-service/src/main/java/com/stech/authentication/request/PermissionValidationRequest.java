@@ -1,7 +1,5 @@
 package com.stech.authentication.request;
 
-import java.util.List;
-
 import lombok.Builder;
 import lombok.Data;
 
@@ -9,5 +7,7 @@ import lombok.Data;
 @Builder
 public class PermissionValidationRequest {
     String token;
-    List<String> requiredPermissions;
+    String requiredPermissionsApi;
+    String requiredPermissionsMethod;
+    String ipAddress;
 }

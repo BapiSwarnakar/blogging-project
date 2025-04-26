@@ -2,6 +2,7 @@ package com.stech.authentication.service.impl;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import org.springframework.security.authentication.AuthenticationManager;
@@ -146,21 +147,24 @@ public class AuthServiceImpl implements AuthService{
                     .isValid(false)
                     .message("Invalid token")
                     .userPermissions(null)
+                    .ipAddress(request.getIpAddress())
+                    .userId(null)
                     .build();
         }
 
         UserEntity userEntity = userRepository.findByUsername(username)
                 .orElseThrow(()-> new CustomResourceNotFoundException("User not found"));
 
+        boolean hasAccess = getCombinedValidationPermissions(userEntity, request.getRequiredPermissionsApi(), request.getRequiredPermissionsMethod());
+        
         Set<String> userPermissions = getCombinedPermissions(userEntity);
-
-        boolean hasAccess = request.getRequiredPermissions().stream()
-            .allMatch(userPermissions::contains);
 
         return PermissionValidationResponse.builder()
                 .isValid(hasAccess)
                 .message(hasAccess ? "Access granted" : "Insufficient permissions")
                 .userPermissions(userPermissions)
+                .ipAddress(request.getIpAddress())
+                .userId(userEntity.getId())
                 .build();
     }
 
@@ -199,5 +203,25 @@ public class AuthServiceImpl implements AuthService{
         user.getDirectPermissions().forEach(perm -> permissions.add(perm.getName()));
         
         return permissions;
+    }
+
+    private boolean getCombinedValidationPermissions(UserEntity user, String apiUrl, String method) {
+        AtomicBoolean hasAccess = new AtomicBoolean(false);
+        // Add role-based permissions
+        user.getRoles().forEach(role -> 
+            role.getPermissions().forEach(perm -> {
+                if (perm.getApiUrl().equals(apiUrl) && perm.getApiMethod().equalsIgnoreCase(method)) {
+                    hasAccess.set(true);
+                }
+            })
+        );
+        
+        // Add direct permissions
+        user.getDirectPermissions().forEach(perm -> {
+            if (perm.getApiUrl().equals(apiUrl) && perm.getApiMethod().equalsIgnoreCase(method)) {
+                hasAccess.set(true);
+            }
+        });
+        return hasAccess.get();
     }
 }

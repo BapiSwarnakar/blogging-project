@@ -11,4 +11,6 @@ public class PermissionValidationResponse {
     boolean isValid;
     String message;
     Set<String> userPermissions;
+    String ipAddress;
+    Long userId;
 }

@@ -27,7 +27,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public JwtAuthenticationFilter(JwtTokenProvider jwtService, CustomUserDetailsServiceImpl customUserDetailsServiceImpl) {
         this.jwtService = jwtService;
         this.customUserDetailsServiceImpl = customUserDetailsServiceImpl;
-        System.out.println("JwtAuthenticationFilter initialized...");
     }
 
     @Override
@@ -36,6 +35,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+        System.out.println("Request URL: " + request.getRequestURL());
+        System.out.println("Request Method: " + request.getMethod());
+        System.out.println("Request Headers: " + request.getHeader("userId"));
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;

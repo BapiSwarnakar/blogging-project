@@ -60,9 +60,9 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                     
                     Map<String,String> requestMap = new HashMap<>();
                    
-                    requestMap.put("accessToken", authHeader);
-                    requestMap.put("requestURl", extractedPath);
-                    requestMap.put("method", method.name());
+                    requestMap.put("token", authHeader);
+                    requestMap.put("requiredPermissionsApi", extractedPath);
+                    requestMap.put("requiredPermissionsMethod", method.name());
                     requestMap.put("ipAddress", extractClientIp(exchange));
                
                     // Perform token validation asynchronously using WebClient
@@ -75,13 +75,16 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                             .flatMap(responseEntity -> {
                                 HttpStatus status = (HttpStatus) responseEntity.getStatusCode();
                                 if (status.is2xxSuccessful()) {
-                                    
-                                	HttpHeaders headers = responseEntity.getHeaders();
-                                	
+                                    // Token is valid, proceed with the request
+                                    String responseBody = responseEntity.getBody();
+                                    System.out.println("Response Body: " + responseBody);
+                                    JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
+                                    String ipAddress = jsonResponse.get("ipAddress").getAsString();
+                                    String userId = jsonResponse.get("userId").getAsString();
+
                                 	exchange.getRequest().mutate()
-                                	.header("ipAddress", headers.getFirst("ipAddress"))
-                                	.header("userAccountId", headers.getFirst("userAccountId"))
-                                	.header("impersonatedById", headers.getFirst("impersonatedById"))
+                                	.header("ipAddress", ipAddress)
+                                	.header("userId", userId)
                                 	.build();
                                     
                                 	return chain.filter(exchange);

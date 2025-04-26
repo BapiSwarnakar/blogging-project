@@ -30,9 +30,22 @@ public class PermissionEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private String category;
+
+    @Column(nullable = false, unique = true)
+    private String slug;
+
+    @Column(nullable = true)
+    private String apiUrl;
+
+    @Column(nullable = true)
+    private String apiMethod;
+
+    @Column(nullable = true)
     private String description;
 
     @Builder.Default

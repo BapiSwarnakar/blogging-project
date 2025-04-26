@@ -28,7 +28,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        System.out.println("Login Request: " + loginRequest);
         return ResponseEntity.ok(authService.authenticateUser(loginRequest));
     }
 
@@ -40,6 +39,10 @@ public class AuthController {
     @PostMapping("/validate-token")
     public ResponseEntity<PermissionValidationResponse> validateTokenAndPermissions(
             @RequestBody PermissionValidationRequest request) {
-        return ResponseEntity.ok(authService.validateTokenAndPermissions(request));
+        PermissionValidationResponse response = authService.validateTokenAndPermissions(request);
+        if (!response.isValid()) {
+            return ResponseEntity.status(403).body(response); // Forbidden
+        }
+        return ResponseEntity.ok(response);
     }
 }

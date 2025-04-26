@@ -17,14 +17,19 @@ import com.stech.authentication.entity.PermissionEntity;
 import com.stech.authentication.request.PermissionRequest;
 import com.stech.authentication.service.PermissionService;
 
-import lombok.RequiredArgsConstructor;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/api/v1/permissions")
-@RequiredArgsConstructor
+@RequestMapping("/api/v1/auth/permissions")
 public class PermissionController {
 
     private final PermissionService permissionService;
+    private final HttpServletRequest request;
+
+    PermissionController(PermissionService permissionService, HttpServletRequest request) {
+        this.permissionService = permissionService;
+        this.request = request;
+    }
 
     @PostMapping
     public ResponseEntity<PermissionEntity> createPermission(@RequestBody PermissionRequest request) {
@@ -38,6 +43,7 @@ public class PermissionController {
 
     @GetMapping
     public ResponseEntity<List<PermissionEntity>> getAllPermissions() {
+        System.out.println("Request URL: " + request.getHeader("ipAddress"));
         return ResponseEntity.ok(permissionService.getAllPermissions());
     }
 

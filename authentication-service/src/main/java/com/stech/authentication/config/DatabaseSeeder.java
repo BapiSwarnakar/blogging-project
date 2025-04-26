@@ -50,24 +50,23 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
     private void seedPermissions() {
+        //createPermission(String name, String category, String slug, String apiUrl, String description)
         List<PermissionEntity> permissions = Arrays.asList(
-            createPermission("USER_READ", "View user information"),
-            createPermission("USER_CREATE", "Create new users"),
-            createPermission("USER_UPDATE", "Update user information"),
-            createPermission("USER_DELETE", "Delete users"),
-            
-            createPermission("ROLE_MANAGE", "Manage roles and permissions"),
-            
-            createPermission("PRODUCT_READ", "View products"),
-            createPermission("PRODUCT_CREATE", "Create products"),
-            createPermission("PRODUCT_UPDATE", "Update products"),
-            createPermission("PRODUCT_DELETE", "Delete products"),
-            
-            createPermission("ORDER_MANAGE", "Manage orders"),
-            createPermission("DASHBOARD_VIEW", "View dashboard"),
-            
-            createPermission("SETTINGS_MANAGE", "Manage system settings"),
-            createPermission("AUDIT_VIEW", "View audit logs")
+            // user management permissions
+            createPermission("Add User", "User Manage", "USER_CREATE", "/api/v1/auth/user","POST", "Create new users"),
+            createPermission("Display User","User Manage", "USER_READ",  "/api/v1/auth/user","GET", "View user information"),
+            createPermission("Update User", "User Manage", "USER_UPDATE", "/api/v1/auth/user","PUT", "Update user information"),
+            createPermission("Delete User", "User Manage", "USER_DELETE", "/api/v1/auth/user","DELETE", "Delete users"),
+            // role management permissions
+            createPermission("Add Role", "Role Manage", "ROLE_CREATE", "/api/v1/auth/role","POST", "Create new roles"),            
+            createPermission("Display Role", "Role Manage", "ROLE_READ", "/api/v1/auth/role","GET", "View role information"),
+            createPermission("Update Role", "Role Manage", "ROLE_UPDATE", "/api/v1/auth/role","PUT", "Update role information"),
+            createPermission("Delete Role", "Role Manage", "ROLE_DELETE", "/api/v1/auth/role","DELETE", "Delete roles"),
+            // permission management permissions
+            createPermission("Add Permission", "Permission Manage", "PERMISSION_CREATE", "/api/v1/auth/permissions","POST", "Create new permissions"),
+            createPermission("Display Permission", "Permission Manage", "PERMISSION_READ", "/api/v1/auth/permissions","GET", "View permission information"),
+            createPermission("Update Permission", "Permission Manage", "PERMISSION_UPDATE", "/api/v1/auth/permissions","PUT", "Update permission information"),
+            createPermission("Delete Permission", "Permission Manage", "PERMISSION_DELETE", "/api/v1/auth/permissions","DELETE", "Delete permissions")
         );
 
         permissionRepository.saveAll(permissions);
@@ -156,9 +155,13 @@ public class DatabaseSeeder implements CommandLineRunner {
         log.info("Seeded test users: manager, user");
     }
 
-    private PermissionEntity createPermission(String name, String description) {
+    private PermissionEntity createPermission(String name, String category, String slug, String apiUrl, String apiMethod, String description) {
         return PermissionEntity.builder()
             .name(name)
+            .category(category)
+            .slug(slug)
+            .apiUrl(apiUrl)
+            .apiMethod(apiMethod)
             .description(description)
             .build();
     }
