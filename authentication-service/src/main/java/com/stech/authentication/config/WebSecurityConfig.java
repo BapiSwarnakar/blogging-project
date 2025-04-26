@@ -19,6 +19,7 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        System.out.println("Configuring security filter chain...");
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth

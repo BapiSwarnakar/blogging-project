@@ -17,6 +17,7 @@ public class SecurityConfig {
     private final CustomUserDetailsServiceImpl customUserDetailsServiceImpl;
 
     public SecurityConfig(CustomUserDetailsServiceImpl customUserDetailsServiceImpl) {
+        System.out.println("CustomUserDetailsServiceImpl...");
         this.customUserDetailsServiceImpl = customUserDetailsServiceImpl;
     }
 
