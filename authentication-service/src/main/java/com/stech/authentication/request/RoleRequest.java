@@ -11,8 +11,10 @@ import lombok.Data;
 public class RoleRequest {
     @NotBlank
     private String name;
-    
     private String description;
-    
-    private Set<String> permissionNames;
+    private Set<Long> permissionId;
+    @Builder.Default
+    private boolean isActive = true;
+    @Builder.Default
+    private boolean isFullAccess = false;
 }

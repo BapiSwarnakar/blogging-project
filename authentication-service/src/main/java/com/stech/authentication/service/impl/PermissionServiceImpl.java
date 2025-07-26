@@ -31,20 +31,37 @@ public class PermissionServiceImpl implements PermissionService {
         PermissionEntity permission = new PermissionEntity();
         permission.setName(request.getName());
         permission.setDescription(request.getDescription());
-
-        return permissionRepository.save(permission);
+        permission.setCategory(request.getCategory());
+        permission.setSlug(request.getSlug());
+        permission.setApiUrl(request.getApiUrl());
+        permission.setApiMethod(request.getApiMethod());
+        
+        PermissionEntity permisson = permissionRepository.save(permission);
+        permission.setRoles(null); // Avoid loading roles to prevent circular references
+        permission.setUsers(null); // Avoid loading users to prevent circular references
+        return permisson;
     }
 
     // Read
     @Override
     public PermissionEntity getPermissionById(Long id) {
-        return permissionRepository.findById(id)
+        PermissionEntity permission = permissionRepository.findById(id)
             .orElseThrow(() -> new CustomResourceNotFoundException("Permission not found with id: " + id));
+        permission.setRoles(null); // Avoid loading roles to prevent circular references
+        permission.setUsers(null); // Avoid loading users to prevent circular references
+        return permission;
     }
 
     @Override
     public List<PermissionEntity> getAllPermissions() {
-        return permissionRepository.findAll();
+        List<PermissionEntity> permissionEntities = permissionRepository.findAll();
+        return permissionEntities.stream()
+            .map(permission -> {
+                permission.setRoles(null); // Avoid loading roles to prevent circular references
+                permission.setUsers(null); // Avoid loading users to prevent circular references
+                return permission;
+            })
+            .toList();
     }
 
     // Update
@@ -63,14 +80,17 @@ public class PermissionServiceImpl implements PermissionService {
             permission.setDescription(request.getDescription());
         }
         
-        return permissionRepository.save(permission);
+        PermissionEntity permisson = permissionRepository.save(permission);
+        permisson.setRoles(null); // Avoid loading roles to prevent circular references
+        permisson.setUsers(null); // Avoid loading users to prevent circular references
+        return permisson;
     }
 
     // Delete
     @Override
     public void deletePermission(Long id) {
         PermissionEntity permission = getPermissionById(id);
-        if (!permission.getRoles().isEmpty() || !permission.getUsers().isEmpty()) {
+        if (permission.getRoles() != null && !permission.getRoles().isEmpty() || permission.getUsers() != null && !permission.getUsers().isEmpty()) {
             throw new CustomOperationNotAllowedException("Cannot delete permission assigned to roles or users");
         }
         permissionRepository.delete(permission);

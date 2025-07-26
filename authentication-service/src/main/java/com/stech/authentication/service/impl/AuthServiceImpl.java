@@ -208,14 +208,19 @@ public class AuthServiceImpl implements AuthService{
     private boolean getCombinedValidationPermissions(UserEntity user, String apiUrl, String method) {
         AtomicBoolean hasAccess = new AtomicBoolean(false);
         // Add role-based permissions
-        user.getRoles().forEach(role -> 
+        user.getRoles().forEach(role -> {
+            if (role.isFullAccess()) {
+                hasAccess.set(true);
+                return; // Full access overrides all checks
+            }
+            // Check if role has permission for the given API URL and method
             role.getPermissions().forEach(perm -> {
                 if (perm.getApiUrl().equals(apiUrl) && perm.getApiMethod().equalsIgnoreCase(method)) {
                     hasAccess.set(true);
                 }
-            })
-        );
-        
+            });
+        });
+
         // Add direct permissions
         user.getDirectPermissions().forEach(perm -> {
             if (perm.getApiUrl().equals(apiUrl) && perm.getApiMethod().equalsIgnoreCase(method)) {

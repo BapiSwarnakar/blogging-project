@@ -28,21 +28,21 @@ public class CustomUserDetails implements UserDetails {
     }
 
     private Collection<? extends GrantedAuthority> getAuthorities(UserEntity user) {
-        Set<GrantedAuthority> authorities = new HashSet<>();
+        Set<GrantedAuthority> authoritiesSet = new HashSet<>();
         
         // Add roles
         user.getRoles().forEach(role -> {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName().toUpperCase()));
+            authoritiesSet.add(new SimpleGrantedAuthority("ROLE_" + role.getName().toUpperCase()));
             // Add permissions from roles
             role.getPermissions().forEach(permission -> 
-                authorities.add(new SimpleGrantedAuthority(permission.getSlug())));
+                authoritiesSet.add(new SimpleGrantedAuthority(permission.getSlug())));
         });
         
         // Add direct permissions
         user.getDirectPermissions().forEach(permission -> 
-            authorities.add(new SimpleGrantedAuthority(permission.getSlug())));
+            authoritiesSet.add(new SimpleGrantedAuthority(permission.getSlug())));
         
-        return Collections.unmodifiableSet(authorities);
+        return Collections.unmodifiableSet(authoritiesSet);
     }
 
     // Getters

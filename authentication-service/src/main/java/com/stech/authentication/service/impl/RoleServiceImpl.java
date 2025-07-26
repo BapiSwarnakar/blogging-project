@@ -17,9 +17,11 @@ import com.stech.authentication.request.RoleRequest;
 import com.stech.authentication.service.RoleService;
 
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Transactional
+@Slf4j
 public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
@@ -35,42 +37,74 @@ public class RoleServiceImpl implements RoleService {
         if (roleRepository.existsByName(request.getName())) {
             throw new CustomResourceAlreadyExistsException("Role already exists with name: " + request.getName());
         }
-
+        log.info("Creating role: {}", request);
         RoleEntity role = new RoleEntity();
         role.setName(request.getName());
         role.setDescription(request.getDescription());
+        role.setActive(request.isActive());
+        role.setFullAccess(request.isFullAccess());
 
-        if (request.getPermissionNames() != null && !request.getPermissionNames().isEmpty()) {
-            Set<PermissionEntity> permissions = request.getPermissionNames().stream()
-                .map(permissionName -> permissionRepository.findByName(permissionName)
-                    .orElseThrow(() -> new CustomResourceNotFoundException("Permission not found: " + permissionName)))
+        if (request.getPermissionId() != null && !request.getPermissionId().isEmpty()) {
+            Set<PermissionEntity> permissions = request.getPermissionId().stream()
+                .map(permissionId -> permissionRepository.findById(permissionId)
+                    .orElseThrow(() -> new CustomResourceNotFoundException("Permission not found: " + permissionId)))
                 .collect(Collectors.toSet());
-            
-            if (permissions.size() != request.getPermissionNames().size()) {
-                List<String> missingPermissions = request.getPermissionNames().stream()
-                    .filter(name -> permissionRepository.findByName(name).isEmpty())
+
+            if (permissions.size() != request.getPermissionId().size()) {
+                List<Long> missingPermissions = request.getPermissionId().stream()
+                    .filter(id -> permissionRepository.findById(id).isEmpty())
                     .toList();
                     
                 throw new CustomResourceNotFoundException(
-                    "The following permissions were not found: " + String.join(", ", missingPermissions)
+                    "The following permissions were not found: " + String.join(", ", missingPermissions.stream()
+                        .map(String::valueOf)
+                        .toList())
                 );
             }
             
             role.setPermissions(permissions);
         }
 
-        return roleRepository.save(role);
+        RoleEntity savedRole = roleRepository.save(role);
+        savedRole.setUsers(null); // Avoid loading users to prevent circular references
+        savedRole.setPermissions(savedRole.getPermissions().stream()
+            .map(permission -> {
+                permission.setRoles(null); // Avoid loading roles to prevent circular references
+                return permission;
+            })
+            .collect(Collectors.toSet()));
+        return savedRole;
     }
 
     @Override
     public RoleEntity getRoleById(Long id) {
-        return roleRepository.findById(id)
+        RoleEntity role = roleRepository.findById(id)
             .orElseThrow(() -> new CustomResourceNotFoundException("Role not found with id: " + id));
+        role.setUsers(null); // Avoid loading users to prevent circular references
+        role.setPermissions(role.getPermissions().stream()
+            .map(permission -> {
+                permission.setRoles(null); // Avoid loading roles to prevent circular references
+                return permission;
+            })
+            .collect(Collectors.toSet()));
+        return role;
     }
 
     @Override
     public List<RoleEntity> getAllRoles() {
-        return roleRepository.findAll();
+        List<RoleEntity> roles = roleRepository.findAll();
+        return roles.stream()
+            .map(role -> {
+                role.setUsers(null); // Avoid loading users to prevent circular references
+                role.setPermissions(role.getPermissions().stream()
+                    .map(permission -> {
+                        permission.setRoles(null); // Avoid loading roles to prevent circular references
+                        return permission;
+                    })
+                    .collect(Collectors.toSet()));
+                return role;
+            })
+            .toList();
     }
 
     @Override
@@ -87,22 +121,32 @@ public class RoleServiceImpl implements RoleService {
         if (request.getDescription() != null) {
             role.setDescription(request.getDescription());
         }
+        role.setActive(request.isActive());
+        role.setFullAccess(request.isFullAccess());
         
-        if (request.getPermissionNames() != null) {
-            Set<PermissionEntity> permissions = request.getPermissionNames().stream()
-                .map(permissionName -> permissionRepository.findByName(permissionName)
-                    .orElseThrow(() -> new CustomResourceNotFoundException("Permission not found: " + permissionName)))
+        if (request.getPermissionId() != null) {
+            Set<PermissionEntity> permissions = request.getPermissionId().stream()
+                .map(permissionId -> permissionRepository.findById(permissionId)
+                    .orElseThrow(() -> new CustomResourceNotFoundException("Permission not found: " + permissionId)))
                 .collect(Collectors.toSet());
             role.setPermissions(permissions);
         }
-        
-        return roleRepository.save(role);
+
+        RoleEntity savedRole = roleRepository.save(role);
+        savedRole.setUsers(null); // Avoid loading users to prevent circular references
+        savedRole.setPermissions(savedRole.getPermissions().stream()
+            .map(permission -> {
+                permission.setRoles(null); // Avoid loading roles to prevent circular references
+                return permission;
+            })
+            .collect(Collectors.toSet()));
+        return savedRole;
     }
 
     @Override
     public void deleteRole(Long id) {
         RoleEntity role = getRoleById(id);
-        if (!role.getUsers().isEmpty()) {
+        if (role.getUsers() != null && !role.getUsers().isEmpty()) {
             throw new CustomOperationNotAllowedException(
                 "Cannot delete role assigned to users. First unassign the role from all users."
             );
@@ -123,7 +167,15 @@ public class RoleServiceImpl implements RoleService {
         }
         
         role.getPermissions().add(permission);
-        return roleRepository.save(role);
+        RoleEntity savedRole = roleRepository.save(role);
+        savedRole.setUsers(null); // Avoid loading users to prevent circular references
+        savedRole.setPermissions(savedRole.getPermissions().stream()
+            .map(permission1 -> {
+                permission1.setRoles(null); // Avoid loading roles to prevent circular references
+                return permission1;
+            })
+            .collect(Collectors.toSet()));
+        return savedRole;
     }
 
     @Override

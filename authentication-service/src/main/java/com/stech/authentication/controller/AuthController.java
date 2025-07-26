@@ -15,9 +15,11 @@ import com.stech.authentication.response.UserResponse;
 import com.stech.authentication.service.AuthService;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -33,6 +35,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
+        log.info(signUpRequest.toString());
         return ResponseEntity.ok(authService.registerUser(signUpRequest));
     }
 

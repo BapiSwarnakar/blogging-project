@@ -36,7 +36,16 @@ public class RoleEntity {
     @Column(unique = true, nullable = false)
     private String name;
 
+    @Column(nullable = true)
     private String description;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean isActive = true;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean isFullAccess = false;
 
     @Builder.Default
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)

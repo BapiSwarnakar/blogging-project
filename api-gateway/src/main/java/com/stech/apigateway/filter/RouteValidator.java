@@ -12,8 +12,8 @@ public class RouteValidator {
 
     public static final List<Pattern> openApiEndpoints = List.of(
             Pattern.compile("^/api/v1/auth/login$"),
-            Pattern.compile("^/api/v1/user-mgmt/register$"),
-            Pattern.compile("^/api/v1/auth/validate-user$"),
+            Pattern.compile("^/api/v1/auth/register$"),
+            Pattern.compile("^/api/v1/auth/validate-token$"),
             Pattern.compile("^/api/v1/auth/forget-password$"),
             Pattern.compile("^/api/v1/auth/confirm-forget-password$"),
             Pattern.compile("^/api/v1/auth/refresh-token$"),

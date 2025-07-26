@@ -1,163 +1,165 @@
 package com.stech.apigateway.filter;
 
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.stech.apigateway.exception.CustomJwtTokenException;
+import com.stech.apigateway.exception.CustomUnauthorizedException;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ServerWebExchange;
-
-import com.stech.apigateway.exception.CustomJwtTokenException;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-
 import reactor.core.publisher.Mono;
 
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
 @Component
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
-    @Autowired
-    private RouteValidator validator;
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final String AUTH_SERVICE_URL = "http://AUTH-SERVICE/api/v1/auth/validate-token";
+    private static final String IP_REGEX = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+    private static final String API_PATH_PREFIX = "/api";
 
-    @Autowired
-    private WebClient.Builder webClient;
-    @Autowired
-    private Gson gson;
+    private final RouteValidator validator;
+    private final WebClient.Builder webClientBuilder;
+    private final Gson gson;
 
-    public AuthenticationFilter() {
+    public AuthenticationFilter(RouteValidator validator, WebClient.Builder webClientBuilder, Gson gson) {
         super(Config.class);
+        this.validator = validator;
+        this.webClientBuilder = webClientBuilder;
+        this.gson = gson;
     }
 
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
-            if (validator.isSecured.test(exchange.getRequest())) {
-                // Check if the header contains the token
-                if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-                    throw new CustomJwtTokenException("Missing authorization header");
-                }
-
-                String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
-                if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                    authHeader = authHeader.substring(7);
-                    
-                   
-                    String extractedPath = extractApiPath(exchange);
-                    if(extractedPath == null) {
-                    	throw new CustomJwtTokenException("Invalid request URL (missing '/api')");
-                    }
-                    
-                    HttpMethod method = exchange.getRequest().getMethod();
-                    
-                    Map<String,String> requestMap = new HashMap<>();
-                   
-                    requestMap.put("token", authHeader);
-                    requestMap.put("requiredPermissionsApi", extractedPath);
-                    requestMap.put("requiredPermissionsMethod", method.name());
-                    requestMap.put("ipAddress", extractClientIp(exchange));
-               
-                    // Perform token validation asynchronously using WebClient
-                    return webClient.build().post()
-                            .uri("http://AUTH-SERVICE/api/v1/auth/validate-token")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .bodyValue(requestMap)
-                            .retrieve()
-                            .toEntity(String.class)
-                            .flatMap(responseEntity -> {
-                                HttpStatus status = (HttpStatus) responseEntity.getStatusCode();
-                                if (status.is2xxSuccessful()) {
-                                    // Token is valid, proceed with the request
-                                    String responseBody = responseEntity.getBody();
-                                    System.out.println("Response Body: " + responseBody);
-                                    JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
-                                    String ipAddress = jsonResponse.get("ipAddress").getAsString();
-                                    String userId = jsonResponse.get("userId").getAsString();
-
-                                	exchange.getRequest().mutate()
-                                	.header("ipAddress", ipAddress)
-                                	.header("userId", userId)
-                                	.build();
-                                    
-                                	return chain.filter(exchange);
-                                	
-                                } else if (status.is4xxClientError()) {
-                                    // Handle 4xx client errors
-                                    return Mono.error(new CustomJwtTokenException("Invalid token! Status: " + status.value()));
-                                } else {
-                                    // Handle 5xx server errors
-                                    return Mono.error(new CustomJwtTokenException("Server error during token validation. Status: " + status.value()));
-                                }
-                            })
-                            .onErrorResume(WebClientResponseException.class, ex -> {
-                                String messageString = ex.getResponseBodyAsString();
-                                
-                                JsonObject jsonResponse = gson.fromJson(messageString, JsonObject.class);
-                                String message = jsonResponse.get("message").getAsString();
-                                
-                                return Mono.error(new CustomJwtTokenException(message));
-                            });
-                } else {
-                    throw new CustomJwtTokenException("Invalid authorization header format");
-                }
+            if (!validator.isSecured.test(exchange.getRequest())) {
+                return chain.filter(exchange);
             }
-            return chain.filter(exchange);
+
+            String authHeader = getAuthorizationHeader(exchange);
+            String token = extractToken(authHeader);
+            String extractedPath = extractApiPath(exchange);
+            HttpMethod method = exchange.getRequest().getMethod();
+
+            Map<String, String> requestMap = createValidationRequest(token, extractedPath, method, exchange);
+
+            return validateToken(requestMap)
+                    .flatMap(responseEntity -> processValidToken(responseEntity, exchange))
+                    .then(chain.filter(exchange))
+                    .onErrorResume(WebClientResponseException.class, this::handleWebClientError);
         };
     }
 
-    public static class Config {
-        // Configuration properties for the filter if needed
-    }
-    public static String extractApiPath(ServerWebExchange exchange) {
-    	
-        String requestUrl = exchange.getRequest().getURI().toString();
-        
-        int index = requestUrl.indexOf("/api");
-
-        if (index >= 0) {
-            return requestUrl.substring(index);
-        } else {
-            return  null;
+    private String getAuthorizationHeader(ServerWebExchange exchange) {
+        if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
+            throw new CustomUnauthorizedException("Missing authorization header");
         }
-        
+        return exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
     }
+
+    private String extractToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
+            throw new CustomJwtTokenException("Invalid authorization header format");
+        }
+        return authHeader.substring(BEARER_PREFIX.length());
+    }
+
+    private Map<String, String> createValidationRequest(String token, String apiPath, HttpMethod method, ServerWebExchange exchange) {
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("token", token);
+        requestMap.put("requiredPermissionsApi", apiPath);
+        requestMap.put("requiredPermissionsMethod", method.name());
+        requestMap.put("ipAddress", extractClientIp(exchange));
+        return requestMap;
+    }
+
+    private Mono<ResponseEntity<String>> validateToken(Map<String, String> requestMap) {
+        return webClientBuilder.build()
+                .post()
+                .uri(AUTH_SERVICE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestMap)
+                .retrieve()
+                .toEntity(String.class);
+    }
+
+    private Mono<Void> processValidToken(ResponseEntity<String> responseEntity, ServerWebExchange exchange) {
+        HttpStatusCode status = responseEntity.getStatusCode();
+        if (!status.is2xxSuccessful()) {
+            String errorMsg = status.is4xxClientError() 
+                ? "Invalid token! Status: " + status.value() 
+                : "Server error during token validation. Status: " + status.value();
+            return Mono.error(new CustomJwtTokenException(errorMsg));
+        }
+
+        String responseBody = responseEntity.getBody();
+        log.info("Response Body: {}", responseBody);
         
+        JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
+        String ipAddress = jsonResponse.get("ipAddress").getAsString();
+        String userId = jsonResponse.get("userId").getAsString();
+
+        exchange.getRequest().mutate()
+                .header("ipAddress", ipAddress)
+                .header("userId", userId)
+                .build();
+
+        return Mono.empty();
+    }
+
+    private Mono<Void> handleWebClientError(WebClientResponseException ex) {
+        String messageString = ex.getResponseBodyAsString();
+        JsonObject jsonResponse = gson.fromJson(messageString, JsonObject.class);
+        String message = jsonResponse.get("message").getAsString();
+        return Mono.error(new CustomJwtTokenException(message));
+    }
+
+    public static String extractApiPath(ServerWebExchange exchange) {
+        String requestUrl = exchange.getRequest().getURI().toString();
+        int index = requestUrl.indexOf(API_PATH_PREFIX);
+        return index >= 0 ? requestUrl.substring(index) : null;
+    }
+
     private String extractClientIp(ServerWebExchange exchange) {
         InetSocketAddress xForwardedForHeader = exchange.getRequest().getRemoteAddress();
-        
         if (xForwardedForHeader != null && xForwardedForHeader.getHostString() != null) {
-        	String ipAddress = xForwardedForHeader.getHostString();
-            String[] ips = ipAddress.split(",");
-            for (String ip : ips) {
-                ip = ip.trim();
-                if (!ip.isEmpty() && isValidIp(ip)) {
-                    return ip;
-                }
-            }
+            return extractValidIpFromHeader(xForwardedForHeader.getHostString());
         }
-        
-        // Fallback to remote address if X-Forwarded-For is not available or valid
+
         InetSocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
         if (remoteAddress != null && remoteAddress.getAddress() != null) {
             return remoteAddress.getAddress().getHostAddress();
         }
 
-        // Fallback return if no IP is found
         return "-";
     }
 
+    private String extractValidIpFromHeader(String ipHeader) {
+        String[] ips = ipHeader.split(",");
+        for (String ip : ips) {
+            ip = ip.trim();
+            if (!ip.isEmpty() && isValidIp(ip)) {
+                return ip;
+            }
+        }
+        return "-";
+    }
 
-	private boolean isValidIp(String ip) {
-	    // Simple IP validation using regex
-	    String ipRegex = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
-	    return ip.matches(ipRegex);
-	}
+    private boolean isValidIp(String ip) {
+        return ip.matches(IP_REGEX);
+    }
+
+    public static class Config {
+        // Configuration properties for the filter if needed
+    }
 }
