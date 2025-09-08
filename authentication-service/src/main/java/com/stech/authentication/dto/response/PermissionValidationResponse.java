@@ -1,4 +1,4 @@
-package com.stech.authentication.response;
+package com.stech.authentication.dto.response;
 
 import java.util.Set;
 

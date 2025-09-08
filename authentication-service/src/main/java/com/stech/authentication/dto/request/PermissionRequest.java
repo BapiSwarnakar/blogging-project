@@ -1,4 +1,4 @@
-package com.stech.authentication.request;
+package com.stech.authentication.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;

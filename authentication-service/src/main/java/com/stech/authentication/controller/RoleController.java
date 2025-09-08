@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.stech.authentication.dto.request.RoleRequest;
 import com.stech.authentication.entity.RoleEntity;
-import com.stech.authentication.request.RoleRequest;
 import com.stech.authentication.service.RoleService;
 
 import jakarta.validation.Valid;
@@ -39,6 +39,7 @@ public class RoleController {
         return ResponseEntity.ok(roleService.getRoleById(id));
     }
 
+    @PreAuthorize("hasAuthority('ROLE_READ')")
     @GetMapping
     public ResponseEntity<List<RoleEntity>> getAllRoles() {
         return ResponseEntity.ok(roleService.getAllRoles());

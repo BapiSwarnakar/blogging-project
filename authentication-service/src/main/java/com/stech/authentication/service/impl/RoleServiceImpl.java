@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.stech.authentication.dto.request.RoleRequest;
 import com.stech.authentication.entity.PermissionEntity;
 import com.stech.authentication.entity.RoleEntity;
 import com.stech.authentication.exception.CustomOperationNotAllowedException;
@@ -13,7 +14,6 @@ import com.stech.authentication.exception.CustomResourceAlreadyExistsException;
 import com.stech.authentication.exception.CustomResourceNotFoundException;
 import com.stech.authentication.repository.PermissionRepository;
 import com.stech.authentication.repository.RoleRepository;
-import com.stech.authentication.request.RoleRequest;
 import com.stech.authentication.service.RoleService;
 
 import jakarta.transaction.Transactional;

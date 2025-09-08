@@ -1,4 +1,4 @@
-package com.stech.authentication.request;
+package com.stech.authentication.dto.request;
 
 import lombok.Builder;
 import lombok.Data;

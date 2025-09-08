@@ -2,8 +2,8 @@ package com.stech.authentication.service;
 
 import java.util.List;
 
+import com.stech.authentication.dto.request.PermissionRequest;
 import com.stech.authentication.entity.PermissionEntity;
-import com.stech.authentication.request.PermissionRequest;
 
 public interface PermissionService {
     PermissionEntity createPermission(PermissionRequest request);

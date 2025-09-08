@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.stech.authentication.dto.request.PermissionRequest;
 import com.stech.authentication.entity.PermissionEntity;
-import com.stech.authentication.request.PermissionRequest;
 import com.stech.authentication.service.PermissionService;
 
 @RestController

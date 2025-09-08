@@ -4,12 +4,12 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.stech.authentication.dto.request.PermissionRequest;
 import com.stech.authentication.entity.PermissionEntity;
 import com.stech.authentication.exception.CustomOperationNotAllowedException;
 import com.stech.authentication.exception.CustomResourceAlreadyExistsException;
 import com.stech.authentication.exception.CustomResourceNotFoundException;
 import com.stech.authentication.repository.PermissionRepository;
-import com.stech.authentication.request.PermissionRequest;
 import com.stech.authentication.service.PermissionService;
 
 @Service
