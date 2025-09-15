@@ -88,6 +88,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 .post()
                 .uri(AUTH_SERVICE_URL)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + requestMap.get("token"))
                 .bodyValue(requestMap)
                 .retrieve()
                 .toEntity(String.class);
