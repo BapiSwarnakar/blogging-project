@@ -3,6 +3,7 @@ package com.stech.usermgmt.config;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.stech.usermgmt.helper.JwtTokenProvider;
+import com.stech.common.library.JwtTokenLibrary;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,8 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-    private final JwtTokenProvider jwtService;
 
     // Define public endpoints that should skip JWT processing
     private static final String[] PUBLIC_URLS = {
@@ -97,15 +96,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String jwt = authHeader.substring(7);
 
-        if (jwtService.validateToken(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
-            String username = jwtService.getUsernameFromToken(jwt);
-            Collection<SimpleGrantedAuthority> roles = jwtService.getAuthorities(jwt);
+        if (JwtTokenLibrary.validateToken(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
+            String username = JwtTokenLibrary.getUsernameFromToken(jwt);
+            List<String> roles = JwtTokenLibrary.getAuthorities(jwt);
+            Collection<SimpleGrantedAuthority> authorities = roles.stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
 
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(
                         username,
                         null,
-                        roles
+                        authorities
                     );
 
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

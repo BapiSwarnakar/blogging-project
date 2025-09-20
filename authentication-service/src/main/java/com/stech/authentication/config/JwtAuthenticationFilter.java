@@ -2,17 +2,18 @@ package com.stech.authentication.config;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.stech.authentication.helper.JwtTokenProvider;
-import com.stech.authentication.service.impl.CustomUserDetailsServiceImpl;
+import com.stech.common.library.JwtTokenLibrary;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,9 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-    private final JwtTokenProvider jwtService;
-    private final CustomUserDetailsServiceImpl customUserDetailsServiceImpl;
 
     // Define public endpoints that should skip JWT processing
     private static final String[] PUBLIC_URLS = {
@@ -62,11 +60,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     };
     
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
-
-    public JwtAuthenticationFilter(JwtTokenProvider jwtService, CustomUserDetailsServiceImpl customUserDetailsServiceImpl) {
-        this.jwtService = jwtService;
-        this.customUserDetailsServiceImpl = customUserDetailsServiceImpl;
-    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -106,44 +99,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         // Extract JWT token
         final String jwt = authHeader.substring(7);
-        
-        try {
-            // Extract username from JWT token
-            String username = jwtService.getUsernameFromToken(jwt);
-            
-            if (username == null) {
-                log.warn("Could not extract username from JWT token");
-                filterChain.doFilter(request, response);
-                return;
-            }
-            
-            // If there's no existing authentication
-            if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                // Load user details
-                UserDetails userDetails = this.customUserDetailsServiceImpl.loadUserByUsername(username);
-                
-                // Validate token
-                if (jwtService.validateToken(jwt)) {
-                    // Create authentication token
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
+
+        if (JwtTokenLibrary.validateToken(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
+            String username = JwtTokenLibrary.getUsernameFromToken(jwt);
+            List<String> roles = JwtTokenLibrary.getAuthorities(jwt);
+            Collection<SimpleGrantedAuthority> authorities = roles.stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
+
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(
+                        username,
+                        null,
+                        authorities
                     );
-                    authToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
-                    
-                    // Set authentication in security context
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.debug("Authenticated user: {} for URL: {}", username, requestURI);
-                } else {
-                    log.warn("Invalid JWT token for user: {}", username);
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error processing JWT token for URL: {} - {}", requestURI, e.getMessage(), e);
-            // Continue with the filter chain to let the security configuration handle the unauthorized request
+
+            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authToken);
         }
         
         filterChain.doFilter(request, response);
