@@ -54,7 +54,8 @@ public class WebSecurityConfig {
         // Specific authentication endpoints that should be public
         String[] authEndpoints = {
             "/api/v1/auth/login",
-            "/api/v1/auth/register"
+            "/api/v1/auth/register",
+            "/api/v1/auth/refresh-token"
         };
 
         // All other /api/v1/auth/** endpoints will require authentication

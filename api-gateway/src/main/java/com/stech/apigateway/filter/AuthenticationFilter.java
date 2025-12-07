@@ -46,21 +46,26 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 return chain.filter(exchange);
             }
 
-            String authHeader = getAuthorizationHeader(exchange);
-            String token = extractToken(authHeader);
-            String extractedPath = extractApiPath(exchange);
-            HttpMethod method = exchange.getRequest().getMethod();
+            try {
+                String authHeader = getAuthorizationHeader(exchange);
+                String token = extractToken(authHeader);
+                String extractedPath = extractApiPath(exchange);
+                HttpMethod method = exchange.getRequest().getMethod();
 
-            Map<String, String> requestMap = createValidationRequest(token, extractedPath, method, exchange);
+                Map<String, String> requestMap = createValidationRequest(token, extractedPath, method, exchange);
 
-            return validateToken(requestMap)
-                    .flatMap(responseEntity -> processValidToken(responseEntity, exchange))
-                    .then(chain.filter(exchange))
-                    .onErrorResume(WebClientResponseException.class, this::handleWebClientError);
+                return validateToken(requestMap)
+                        .flatMap(responseEntity -> processValidToken(responseEntity, exchange))
+                        .then(chain.filter(exchange))
+                        .onErrorResume(WebClientResponseException.class, this::handleWebClientError);
+            } catch (Exception e) {
+                return Mono.error(e);
+            }
         };
     }
 
     private String getAuthorizationHeader(ServerWebExchange exchange) {
+        log.info("Authorization header: {}", exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION));
         if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
             throw new CustomUnauthorizedException("Missing authorization header");
         }
@@ -107,8 +112,10 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         log.info("Response Body: {}", responseBody);
         
         JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
-        String ipAddress = jsonResponse.get("ipAddress").getAsString();
-        String userId = jsonResponse.get("userId").getAsString();
+        log.info("Response Body Message processValidToken: {}", jsonResponse);
+        JsonObject data = jsonResponse.get("data").getAsJsonObject();
+        String ipAddress = data.get("ipAddress").getAsString();
+        String userId = data.get("userId").getAsString();
 
         exchange.getRequest().mutate()
                 .header("ipAddress", ipAddress)

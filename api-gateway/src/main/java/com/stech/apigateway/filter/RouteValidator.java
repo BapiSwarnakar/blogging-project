@@ -14,9 +14,10 @@ public class RouteValidator {
             Pattern.compile("^/api/v1/auth/login$"),
             Pattern.compile("^/api/v1/auth/register$"),
             Pattern.compile("^/api/v1/auth/validate-token$"),
+            Pattern.compile("^/api/v1/auth/refresh-token$"),
+            Pattern.compile("^/api/v1/auth/logout$"),
             Pattern.compile("^/api/v1/auth/forget-password$"),
             Pattern.compile("^/api/v1/auth/confirm-forget-password$"),
-            Pattern.compile("^/api/v1/auth/refresh-token$"),
             Pattern.compile("^/eureka$"),
             Pattern.compile("^/api/v1/int/bdc/validate-phone-number$")    
         );

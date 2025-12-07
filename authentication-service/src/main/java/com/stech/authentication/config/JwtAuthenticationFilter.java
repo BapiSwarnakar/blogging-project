@@ -22,16 +22,21 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * JWT Authentication Filter for authentication-service
+ * This service has special requirements as it handles user authentication
+ * and needs to allow public access to login, register, refresh-token, and logout endpoints
+ */
 @Component
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // Define public endpoints that should skip JWT processing
     private static final String[] PUBLIC_URLS = {
-        // Authentication endpoints
+        // Authentication endpoints (public access)
         "/api/v1/auth/login",
         "/api/v1/auth/register",
-        
+        "/api/v1/auth/refresh-token",        
         // Swagger UI v3 (OpenAPI)
         "/v3/api-docs",
         "/v3/api-docs/**",
@@ -64,9 +69,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        AntPathMatcher matcher = new AntPathMatcher();
         log.debug("Checking if request should be filtered: {}", path);
-        return Arrays.stream(PUBLIC_URLS).anyMatch(pattern -> matcher.match(pattern, path));
+        return isPublicUrl(path);
     }
 
     @Override
@@ -100,22 +104,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Extract JWT token
         final String jwt = authHeader.substring(7);
 
-        if (JwtTokenLibrary.validateToken(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
-            String username = JwtTokenLibrary.getUsernameFromToken(jwt);
-            List<String> roles = JwtTokenLibrary.getAuthorities(jwt);
-            Collection<SimpleGrantedAuthority> authorities = roles.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .toList();
+        try {
+            if (JwtTokenLibrary.validateToken(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
+                String username = JwtTokenLibrary.getUsernameFromToken(jwt);
+                List<String> authorities = JwtTokenLibrary.getAuthorities(jwt);
+                Collection<SimpleGrantedAuthority> grantedAuthorities = authorities.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .toList();
 
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(
-                        username,
-                        null,
-                        authorities
-                    );
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                            username,
+                            null,
+                            grantedAuthorities
+                        );
 
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authToken);
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+                log.debug("Successfully authenticated user: {} with authorities: {}", username, authorities);
+            } else if (!JwtTokenLibrary.validateToken(jwt)) {
+                log.error("Invalid or expired JWT token for URL: {} {}", method, requestURI);
+                sendErrorResponse(response, 401, "JWT Token Error", "Invalid or expired JWT token. Please login again.");
+                return;
+            }
+        } catch (Exception e) {
+            log.error("JWT token validation failed: {}", e.getMessage());
+            sendErrorResponse(response, 401, "JWT Token Error", "JWT token validation failed: " + e.getMessage());
+            return;
         }
         
         filterChain.doFilter(request, response);
@@ -131,5 +146,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
         return false;
+    }
+
+    /**
+     * Send error response as JSON
+     */
+    private void sendErrorResponse(HttpServletResponse response, int status, String error, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.getWriter().write(String.format(
+            "{\"status\":%d,\"error\":\"%s\",\"message\":\"%s\"}", 
+            status, error, message
+        ));
     }
 }

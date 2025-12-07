@@ -23,11 +23,17 @@ public class JwtTokenProvider {
     @Value("${application.security.jwt.token.expiration}")
     private long jwtExpirationMs;
 
+    @Value("${application.security.jwt.token.refresh.expiration:168}") // Default 7 days in hours
+    private long refreshTokenExpirationHours;
+
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    /**
+     * Generate access token with authorities
+     */
     public String generateToken(Authentication authentication) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
@@ -39,6 +45,24 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .setSubject(authentication.getName())
                 .claim("auth", authorities)
+                .claim("type", "ACCESS")
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS384)
+                .compact();
+    }
+
+    /**
+     * Generate refresh token (longer expiration, no authorities)
+     */
+    public String generateRefreshToken(String username) {
+        Date now = new Date();
+        long refreshExpirationMs = refreshTokenExpirationHours * 60 * 60 * 1000; // Convert hours to ms
+        Date expiryDate = new Date(now.getTime() + refreshExpirationMs);
+
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("type", "REFRESH")
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS384)
@@ -84,7 +108,35 @@ public class JwtTokenProvider {
                 .getBody();
     }
 
+    /**
+     * Check if token is a refresh token
+     */
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = getAllClaimsFromToken(token);
+            return "REFRESH".equals(claims.get("type", String.class));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Check if token is an access token
+     */
+    public boolean isAccessToken(String token) {
+        try {
+            Claims claims = getAllClaimsFromToken(token);
+            return "ACCESS".equals(claims.get("type", String.class));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public long getExpirationInMilliseconds() {
         return jwtExpirationMs;
+    }
+
+    public long getRefreshTokenExpirationInMilliseconds() {
+        return refreshTokenExpirationHours * 60 * 60 * 1000;
     }
 }

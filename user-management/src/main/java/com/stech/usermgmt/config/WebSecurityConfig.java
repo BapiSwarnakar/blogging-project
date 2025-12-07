@@ -1,7 +1,5 @@
 package com.stech.usermgmt.config;
 
-import java.util.Arrays;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -13,18 +11,20 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import lombok.RequiredArgsConstructor;
+import com.stech.common.security.filter.CommonJwtAuthenticationFilter;
 
+import java.util.Arrays;
+
+/**
+ * Security configuration for user-management service
+ * Uses centralized CommonJwtAuthenticationFilter from common-util
+ */
 @Configuration
-@RequiredArgsConstructor
 @EnableMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    // private final AuthenticationProvider authenticationProvider;
-
     // List of paths that don't require authentication
-    String[] publicPaths = {
+    private static final String[] PUBLIC_PATHS = {
         // Swagger UI v3 (OpenAPI)
         "/v3/api-docs/**",
         "/v3/api-docs.yaml",
@@ -32,7 +32,6 @@ public class WebSecurityConfig {
         "/swagger-ui.html",
         "/swagger-ui/index.html",
         "/swagger-ui/index.html/**",
-        "/swagger-ui.html",
         "/webjars/**",
         "/swagger-resources/**",
         "/swagger-resources",
@@ -48,6 +47,16 @@ public class WebSecurityConfig {
         "/api-docs.yaml"
     };
 
+    /**
+     * Create CommonJwtAuthenticationFilter bean
+     * No service-specific public URLs for user-management
+     */
+    @Bean
+    public CommonJwtAuthenticationFilter jwtAuthenticationFilter() {
+        // No additional public URLs for this service
+        return new CommonJwtAuthenticationFilter(new String[0]);
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -55,14 +64,14 @@ public class WebSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers(publicPaths).permitAll()
-                .requestMatchers("/api/v1/user/**").authenticated()
+                .requestMatchers(PUBLIC_PATHS).permitAll()
+                // All user management endpoints require authentication
+                .requestMatchers("/api/v1/users/**").authenticated()
                 // Everything else requires authentication
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // .authenticationProvider(authenticationProvider)
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -79,4 +88,3 @@ public class WebSecurityConfig {
         return source;
     }
 }
-

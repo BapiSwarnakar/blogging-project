@@ -18,11 +18,13 @@ import org.springframework.stereotype.Service;
 
 import com.stech.authentication.dto.request.LoginRequest;
 import com.stech.authentication.dto.request.PermissionValidationRequest;
+import com.stech.authentication.dto.request.RefreshTokenRequest;
 import com.stech.authentication.dto.request.SignupRequest;
 import com.stech.authentication.dto.response.JwtResponse;
 import com.stech.authentication.dto.response.PermissionValidationResponse;
 import com.stech.authentication.dto.response.UserResponse;
 import com.stech.authentication.entity.PermissionEntity;
+import com.stech.authentication.entity.RefreshTokenEntity;
 import com.stech.authentication.entity.RoleEntity;
 import com.stech.authentication.entity.UserEntity;
 import com.stech.authentication.exception.CustomAuthException;
@@ -33,6 +35,7 @@ import com.stech.authentication.repository.PermissionRepository;
 import com.stech.authentication.repository.RoleRepository;
 import com.stech.authentication.repository.UserRepository;
 import com.stech.authentication.service.AuthService;
+import com.stech.authentication.service.RefreshTokenService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,23 +49,27 @@ public class AuthServiceImpl implements AuthService{
     private final PermissionRepository permissionRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final RefreshTokenService refreshTokenService;
+    private static final String ASSIGN_ROLE_PREFIX = "ASSIGN_ROLE_";
 
     AuthServiceImpl(AuthenticationManager authenticationManager,
         UserRepository userRepository,
         RoleRepository roleRepository,
         PermissionRepository permissionRepository,
         PasswordEncoder passwordEncoder,
-        JwtTokenProvider tokenProvider){
+        JwtTokenProvider tokenProvider,
+        RefreshTokenService refreshTokenService){
             this.authenticationManager = authenticationManager;
             this.userRepository = userRepository;
             this.roleRepository = roleRepository;
             this.permissionRepository = permissionRepository;
             this.passwordEncoder = passwordEncoder;
             this.tokenProvider = tokenProvider;
+            this.refreshTokenService = refreshTokenService;
     }
 
     @Override
-    public JwtResponse authenticateUser(LoginRequest loginRequest) {
+    public JwtResponse authenticateUser(LoginRequest loginRequest, String ipAddress, String userAgent) {
         log.debug("Attempting to authenticate user: {}", loginRequest.getUsername());
         
         try {
@@ -76,20 +83,40 @@ public class AuthServiceImpl implements AuthService{
             SecurityContextHolder.getContext().setAuthentication(authentication);
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             
-            String jwt = tokenProvider.generateToken(authentication);
-            log.debug("Generated JWT for user: {}", userDetails.getUsername());
+            // Generate access token
+            String accessToken = tokenProvider.generateToken(authentication);
+            log.debug("Generated access token for user: {}", userDetails.getUsername());
+            
+            // Generate refresh token
+            RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(
+                userDetails.getUsername(), ipAddress, userAgent
+            );
+            log.debug("Generated refresh token for user: {}", userDetails.getUsername());
+            
+            // Extract roles and permissions
+            var authorities = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+            
+            var roles = authorities.stream()
+                .filter(auth -> auth.startsWith(ASSIGN_ROLE_PREFIX))
+                .map(auth -> auth.substring(12)) // Remove ROLE_ prefix
+                .toList();
+            
+            var permissions = authorities.stream()
+                .filter(auth -> !auth.startsWith(ASSIGN_ROLE_PREFIX))
+                .toList();
             
             return JwtResponse.builder()
-                .token(jwt)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken.getToken())
+                .tokenType("Bearer")
+                .expiresIn(tokenProvider.getExpirationInMilliseconds() / 1000) // Convert to seconds
                 .id(userDetails.getId())
                 .email(userDetails.getEmail())
                 .username(userDetails.getUsername())
-                .permissions(
-                    userDetails.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .filter(auth -> !auth.startsWith("ROLE_")) // Filter out role prefixes
-                        .toList()
-                )
+                .permissions(permissions)
+                .roles(roles)
                 .build();
                 
         } catch (BadCredentialsException e) {
@@ -150,6 +177,10 @@ public class AuthServiceImpl implements AuthService{
                     .ipAddress(request.getIpAddress())
                     .userId(null)
                     .build();
+        }
+
+        if (!tokenProvider.isAccessToken(request.getToken())) {
+            throw new CustomAuthException("Invalid token type. Only access tokens are allowed.");
         }
 
         UserEntity userEntity = userRepository.findByUsername(username)
@@ -228,5 +259,103 @@ public class AuthServiceImpl implements AuthService{
             }
         });
         return hasAccess.get();
+    }
+
+    @Override
+    public JwtResponse refreshAccessToken(RefreshTokenRequest request) {
+        String refreshTokenString = request.getRefreshToken();
+        
+        try {
+            // Validate refresh token format
+            if (!tokenProvider.validateToken(refreshTokenString)) {
+                log.error("Invalid refresh token provided");
+                throw new CustomAuthException("Invalid or expired refresh token. Please login again.");
+            }
+            
+            // Check if it's actually a refresh token
+            if (!tokenProvider.isRefreshToken(refreshTokenString)) {
+                log.error("Provided token is not a refresh token");
+                throw new CustomAuthException("Invalid token type. Please provide a refresh token.");
+            }
+            
+            // Find and verify refresh token in database
+            RefreshTokenEntity refreshToken = refreshTokenService.findByToken(refreshTokenString);
+            refreshToken = refreshTokenService.verifyExpiration(refreshToken);
+            
+            UserEntity user = refreshToken.getUser();
+            
+            // Load user details to generate new access token
+            CustomUserDetails userDetails = new CustomUserDetails(user);
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities()
+            );
+            
+            // Generate new access token
+            String newAccessToken = tokenProvider.generateToken(authentication);
+            log.info("Refreshed access token for user: {}", user.getUsername());
+            
+            // Extract roles and permissions
+            var authorities = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+            
+            var roles = authorities.stream()
+                .filter(auth -> auth.startsWith(ASSIGN_ROLE_PREFIX))
+                .map(auth -> auth.substring(12))
+                .toList();
+            
+            var permissions = authorities.stream()
+                .filter(auth -> !auth.startsWith(ASSIGN_ROLE_PREFIX))
+                .toList();
+            
+            return JwtResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(refreshTokenString) // Return same refresh token
+                .tokenType("Bearer")
+                .expiresIn(tokenProvider.getExpirationInMilliseconds() / 1000)
+                .id(user.getId())
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .permissions(permissions)
+                .roles(roles)
+                .build();
+                
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            log.error("JWT signature validation failed: {}", e.getMessage());
+            throw new CustomAuthException("Invalid refresh token signature. The token may have been tampered with. Please login again.");
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            log.error("Refresh token has expired: {}", e.getMessage());
+            throw new CustomAuthException("Refresh token has expired. Please login again.");
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            log.error("Malformed refresh token: {}", e.getMessage());
+            throw new CustomAuthException("Malformed refresh token. Please login again.");
+        } catch (io.jsonwebtoken.UnsupportedJwtException e) {
+            log.error("Unsupported JWT token: {}", e.getMessage());
+            throw new CustomAuthException("Unsupported token format. Please login again.");
+        } catch (IllegalArgumentException e) {
+            log.error("JWT token is empty or null: {}", e.getMessage());
+            throw new CustomAuthException("Invalid token. Please login again.");
+        } catch (CustomAuthException e) {
+            // Re-throw custom auth exceptions
+            throw e;
+        } catch (CustomResourceNotFoundException e) {
+            log.error("Refresh token not found in database: {}", e.getMessage());
+            throw new CustomAuthException("Refresh token not found or has been revoked. Please login again.");
+        } catch (Exception e) {
+            log.error("Unexpected error during token refresh: {}", e.getMessage(), e);
+            throw new CustomAuthException("Failed to refresh access token. Please login again.");
+        }
+    }
+
+    @Override
+    public void logout(String refreshToken) {
+        if (refreshToken != null && !refreshToken.isEmpty()) {
+            try {
+                refreshTokenService.deleteByToken(refreshToken);
+                log.info("User logged out successfully");
+            } catch (Exception e) {
+                log.warn("Failed to delete refresh token during logout: {}", e.getMessage());
+            }
+        }
     }
 }

@@ -8,10 +8,14 @@ import lombok.Data;
 @Data
 @Builder
 public class JwtResponse {
-    String token;
-    Long id;
-    String username;
-    String email;
-    List<String> permissions;
+    private String accessToken;
+    private String refreshToken;
+    private String tokenType;
+    private Long expiresIn; // Access token expiration in seconds
+    private Long id;
+    private String username;
+    private String email;
+    private List<String> permissions;
+    private List<String> roles;
 }
 
