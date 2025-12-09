@@ -1,7 +1,7 @@
 package com.stech.authentication.service.impl;
 
 import java.time.Instant;
-import java.util.UUID;
+import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.stech.authentication.entity.RefreshTokenEntity;
 import com.stech.authentication.entity.UserEntity;
 import com.stech.authentication.exception.CustomResourceNotFoundException;
+import com.stech.authentication.exception.CustomRuntimeException;
 import com.stech.authentication.helper.JwtTokenProvider;
 import com.stech.authentication.repository.RefreshTokenRepository;
 import com.stech.authentication.repository.UserRepository;
@@ -28,12 +29,12 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     @Transactional
-    public RefreshTokenEntity createRefreshToken(String username, String ipAddress, String userAgent) {
-        UserEntity user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomResourceNotFoundException("User not found with username: " + username));
+    public RefreshTokenEntity createRefreshToken(String email, String ipAddress, String userAgent) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomResourceNotFoundException("User not found with email: " + email));
 
         // Generate refresh token JWT
-        String refreshTokenString = jwtTokenProvider.generateRefreshToken(username);
+        String refreshTokenString = jwtTokenProvider.generateRefreshToken(user.getId(), email);
 
         // Calculate expiry date
         long refreshExpirationMs = jwtTokenProvider.getRefreshTokenExpirationInMilliseconds();
@@ -44,14 +45,14 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .user(user)
                 .token(refreshTokenString)
                 .expiryDate(expiryDate)
-                .createdAt(Instant.now())
+                .createdAt(LocalDateTime.now())
                 .revoked(false)
                 .ipAddress(ipAddress)
                 .userAgent(userAgent)
                 .build();
 
         refreshToken = refreshTokenRepository.save(refreshToken);
-        log.info("Created refresh token for user: {}", username);
+        log.info("Created refresh token for user: {}", email);
         
         return refreshToken;
     }
@@ -60,11 +61,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public RefreshTokenEntity verifyExpiration(RefreshTokenEntity token) {
         if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
             refreshTokenRepository.delete(token);
-            throw new RuntimeException("Refresh token expired. Please login again.");
+            throw new CustomRuntimeException("Refresh token expired. Please login again.");
         }
 
         if (token.isRevoked()) {
-            throw new RuntimeException("Refresh token has been revoked. Please login again.");
+            throw new CustomRuntimeException("Refresh token has been revoked. Please login again.");
         }
 
         return token;
@@ -81,17 +82,17 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public void deleteByToken(String token) {
         RefreshTokenEntity refreshToken = findByToken(token);
         refreshTokenRepository.delete(refreshToken);
-        log.info("Deleted refresh token for user: {}", refreshToken.getUser().getUsername());
+        log.info("Deleted refresh token for user: {}", refreshToken.getUser().getName());
     }
 
     @Override
     @Transactional
-    public void revokeAllUserTokens(String username) {
-        UserEntity user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomResourceNotFoundException("User not found with username: " + username));
+    public void revokeAllUserTokens(String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomResourceNotFoundException("User not found with email: " + email));
         
         refreshTokenRepository.revokeAllUserTokens(user);
-        log.info("Revoked all refresh tokens for user: {}", username);
+        log.info("Revoked all refresh tokens for user: {}", email);
     }
 
     @Override

@@ -1,7 +1,11 @@
 package com.stech.authentication.entity;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -46,6 +50,18 @@ public class RoleEntity {
     @Builder.Default
     @Column(nullable = false)
     private boolean isFullAccess = false;
+
+    @CreationTimestamp
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean isDeleted = false;
 
     @Builder.Default
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)

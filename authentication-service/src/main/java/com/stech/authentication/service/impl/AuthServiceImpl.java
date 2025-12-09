@@ -2,7 +2,7 @@ package com.stech.authentication.service.impl;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 import java.util.stream.Collectors;
 
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,6 +15,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.stech.authentication.dto.request.LoginRequest;
 import com.stech.authentication.dto.request.PermissionValidationRequest;
@@ -22,7 +23,7 @@ import com.stech.authentication.dto.request.RefreshTokenRequest;
 import com.stech.authentication.dto.request.SignupRequest;
 import com.stech.authentication.dto.response.JwtResponse;
 import com.stech.authentication.dto.response.PermissionValidationResponse;
-import com.stech.authentication.dto.response.UserResponse;
+
 import com.stech.authentication.entity.PermissionEntity;
 import com.stech.authentication.entity.RefreshTokenEntity;
 import com.stech.authentication.entity.RoleEntity;
@@ -70,12 +71,12 @@ public class AuthServiceImpl implements AuthService{
 
     @Override
     public JwtResponse authenticateUser(LoginRequest loginRequest, String ipAddress, String userAgent) {
-        log.debug("Attempting to authenticate user: {}", loginRequest.getUsername());
+        log.debug("Attempting to authenticate user: {}", loginRequest.getEmail());
         
         try {
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                    loginRequest.getUsername(),
+                    loginRequest.getEmail(),
                     loginRequest.getPassword()
                 )
             );
@@ -84,14 +85,12 @@ public class AuthServiceImpl implements AuthService{
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             
             // Generate access token
-            String accessToken = tokenProvider.generateToken(authentication);
-            log.debug("Generated access token for user: {}", userDetails.getUsername());
+            String accessToken = tokenProvider.generateToken(authentication, ipAddress, userAgent);
             
             // Generate refresh token
             RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(
-                userDetails.getUsername(), ipAddress, userAgent
+                userDetails.getEmail(), ipAddress, userAgent
             );
-            log.debug("Generated refresh token for user: {}", userDetails.getUsername());
             
             // Extract roles and permissions
             var authorities = userDetails.getAuthorities().stream()
@@ -114,54 +113,92 @@ public class AuthServiceImpl implements AuthService{
                 .expiresIn(tokenProvider.getExpirationInMilliseconds() / 1000) // Convert to seconds
                 .id(userDetails.getId())
                 .email(userDetails.getEmail())
-                .username(userDetails.getUsername())
+                .name(userDetails.getUsername())
                 .permissions(permissions)
                 .roles(roles)
                 .build();
                 
         } catch (BadCredentialsException e) {
-            log.error("Invalid credentials for user: {}", loginRequest.getUsername());
+            log.error("Invalid credentials for user: {}", loginRequest.getEmail());
             throw new CustomAuthException("Invalid username or password", e);
         } catch (DisabledException e) {
-            log.error("Disabled account attempt: {}", loginRequest.getUsername());
+            log.error("Disabled account attempt: {}", loginRequest.getEmail());
             throw new CustomAuthException("User account is disabled", e);
         } catch (LockedException e) {
-            log.error("Locked account attempt: {}", loginRequest.getUsername());
+            log.error("Locked account attempt: {}", loginRequest.getEmail());
             throw new CustomAuthException("User account is locked", e);
         } catch (Exception e) {
-            log.error("Authentication failed for user: {}", loginRequest.getUsername(), e);
+            log.error("Authentication failed for user: {}", loginRequest.getEmail(), e);
             throw new CustomAuthException("Authentication failed", e);
         }
     }
 
     @Override
-    public UserResponse registerUser(SignupRequest signUpRequest) {
+    @Transactional
+    public JwtResponse registerUser(SignupRequest signUpRequest, String ipAddress, String userAgent) {
         // Validate username/email
-        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-            throw new CustomBadRequestException("Username is already taken");
+        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+            throw new CustomBadRequestException("Email is already taken");
         }
         
         // Create user
+        log.debug("Creating user: {}", signUpRequest);
         UserEntity userEntity = UserEntity.builder()
-                    .username(signUpRequest.getUsername())
+                    .name(signUpRequest.getName())
                     .email(signUpRequest.getEmail())
                     .password(passwordEncoder.encode(signUpRequest.getPassword()))
                     .build();
 
-
+        
+        log.debug("User created: {}", userEntity);
         // Set roles and permissions
         Set<RoleEntity> roles = resolveRoles(signUpRequest.getRoles());
+        log.debug("Roles resolved: {}", roles);
         Set<PermissionEntity> directPermissions = resolvePermissions(signUpRequest.getDirectPermissions());
+        log.debug("Permissions resolved: {}", directPermissions);
 
         userEntity.setRoles(roles);
         userEntity.setDirectPermissions(directPermissions);
-        userRepository.save(userEntity);
+        userEntity = userRepository.save(userEntity);
 
-        return UserResponse.builder()
+        // Authenticate the user (generate tokens)
+        CustomUserDetails userDetails = new CustomUserDetails(userEntity);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+            userDetails, null, userDetails.getAuthorities()
+        );
+        
+        // Generate access token
+        String accessToken = tokenProvider.generateToken(authentication, ipAddress, userAgent);
+        
+        // Generate refresh token
+        RefreshTokenEntity refreshToken = refreshTokenService.createRefreshToken(
+            userEntity.getEmail(), ipAddress, userAgent
+        );
+        
+        // Extract roles and permissions
+        var authorities = userDetails.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .toList();
+        
+        var roleNames = authorities.stream()
+            .filter(auth -> auth.startsWith(ASSIGN_ROLE_PREFIX))
+            .map(auth -> auth.substring(12)) // Remove ROLE_ prefix
+            .toList();
+        
+        var permissions = authorities.stream()
+            .filter(auth -> !auth.startsWith(ASSIGN_ROLE_PREFIX))
+            .toList();
+
+        return JwtResponse.builder()
+            .accessToken(accessToken)
+            .refreshToken(refreshToken.getToken())
+            .tokenType("Bearer")
+            .expiresIn(tokenProvider.getExpirationInMilliseconds() / 1000)
             .id(userEntity.getId())
             .email(userEntity.getEmail())
-            .username(userEntity.getUsername())
-            .permissions(getCombinedPermissions(userEntity))
+            .name(userEntity.getName())
+            .permissions(permissions)
+            .roles(roleNames)
             .build();
     }
 
@@ -183,7 +220,7 @@ public class AuthServiceImpl implements AuthService{
             throw new CustomAuthException("Invalid token type. Only access tokens are allowed.");
         }
 
-        UserEntity userEntity = userRepository.findByUsername(username)
+        UserEntity userEntity = userRepository.findByEmail(username)
                 .orElseThrow(()-> new CustomResourceNotFoundException("User not found"));
 
         // boolean hasAccess = getCombinedValidationPermissions(userEntity, request.getRequiredPermissionsApi(), request.getRequiredPermissionsMethod());
@@ -201,7 +238,7 @@ public class AuthServiceImpl implements AuthService{
 
     private Set<RoleEntity> resolveRoles(Set<String> roleNames) {
         if (roleNames == null || roleNames.isEmpty()) {
-            return Set.of(roleRepository.findByName("ROLE_USER")
+            return Set.of(roleRepository.findByName("USER")
                 .orElseThrow(() -> new CustomResourceNotFoundException("Default role not found")));
         }
 
@@ -227,42 +264,19 @@ public class AuthServiceImpl implements AuthService{
         
         // Add role-based permissions
         user.getRoles().forEach(role -> {
-            role.getPermissions().forEach(perm -> permissions.add(perm.getName()));
+            role.getPermissions().forEach(perm -> permissions.add(perm.getSlug()));
         });
         
         // Add direct permissions
-        user.getDirectPermissions().forEach(perm -> permissions.add(perm.getName()));
+        user.getDirectPermissions().forEach(perm -> permissions.add(perm.getSlug()));
         
         return permissions;
     }
 
-    private boolean getCombinedValidationPermissions(UserEntity user, String apiUrl, String method) {
-        AtomicBoolean hasAccess = new AtomicBoolean(false);
-        // Add role-based permissions
-        user.getRoles().forEach(role -> {
-            if (role.isFullAccess()) {
-                hasAccess.set(true);
-                return; // Full access overrides all checks
-            }
-            // Check if role has permission for the given API URL and method
-            role.getPermissions().forEach(perm -> {
-                if (perm.getApiUrl().equals(apiUrl) && perm.getApiMethod().equalsIgnoreCase(method)) {
-                    hasAccess.set(true);
-                }
-            });
-        });
 
-        // Add direct permissions
-        user.getDirectPermissions().forEach(perm -> {
-            if (perm.getApiUrl().equals(apiUrl) && perm.getApiMethod().equalsIgnoreCase(method)) {
-                hasAccess.set(true);
-            }
-        });
-        return hasAccess.get();
-    }
 
     @Override
-    public JwtResponse refreshAccessToken(RefreshTokenRequest request) {
+    public JwtResponse refreshAccessToken(RefreshTokenRequest request, String ipAddress, String userAgent) {
         String refreshTokenString = request.getRefreshToken();
         
         try {
@@ -291,8 +305,8 @@ public class AuthServiceImpl implements AuthService{
             );
             
             // Generate new access token
-            String newAccessToken = tokenProvider.generateToken(authentication);
-            log.info("Refreshed access token for user: {}", user.getUsername());
+            String newAccessToken = tokenProvider.generateToken(authentication, ipAddress, userAgent);
+            log.info("Refreshed access token for user: {}", user.getName());
             
             // Extract roles and permissions
             var authorities = userDetails.getAuthorities().stream()
@@ -315,7 +329,7 @@ public class AuthServiceImpl implements AuthService{
                 .expiresIn(tokenProvider.getExpirationInMilliseconds() / 1000)
                 .id(user.getId())
                 .email(user.getEmail())
-                .username(user.getUsername())
+                .name(user.getName())
                 .permissions(permissions)
                 .roles(roles)
                 .build();

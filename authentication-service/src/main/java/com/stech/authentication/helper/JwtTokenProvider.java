@@ -1,6 +1,7 @@
 package com.stech.authentication.helper;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import io.jsonwebtoken.io.Decoders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,11 +10,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
+import com.stech.authentication.service.impl.CustomUserDetails;
+
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class JwtTokenProvider {
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
@@ -34,20 +39,26 @@ public class JwtTokenProvider {
     /**
      * Generate access token with authorities
      */
-    public String generateToken(Authentication authentication) {
+    public String generateToken(Authentication authentication, String ipAddress, String userAgent) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
-        String authorities = authentication.getAuthorities().stream()
+        log.info("Generating access token for user: {}", authentication.getName());
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        String permissions = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
         return Jwts.builder()
-                .setSubject(authentication.getName())
-                .claim("auth", authorities)
+                .setId(userDetails.getId().toString())
+                .setSubject(userDetails.getEmail())
                 .claim("type", "ACCESS")
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
+                .claim("ipAddress", ipAddress)
+                .claim("userAgent", userAgent)
+                .claim("permissions", permissions)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS384)
                 .compact();
     }
@@ -55,12 +66,13 @@ public class JwtTokenProvider {
     /**
      * Generate refresh token (longer expiration, no authorities)
      */
-    public String generateRefreshToken(String username) {
+    public String generateRefreshToken(Long userId, String username) {
         Date now = new Date();
         long refreshExpirationMs = refreshTokenExpirationHours * 60 * 60 * 1000; // Convert hours to ms
         Date expiryDate = new Date(now.getTime() + refreshExpirationMs);
 
         return Jwts.builder()
+                .setId(userId.toString())
                 .setSubject(username)
                 .claim("type", "REFRESH")
                 .setIssuedAt(now)

@@ -75,7 +75,7 @@ public class JwtTokenLibrary {
     }
 
     public static List<String> getAuthorities(String token) {
-        String auth = getAllClaimsFromToken(token).get("auth", String.class);
+        String auth = getAllClaimsFromToken(token).get("permissions", String.class);
 
         if (auth == null || auth.isEmpty()) {
             return List.of();

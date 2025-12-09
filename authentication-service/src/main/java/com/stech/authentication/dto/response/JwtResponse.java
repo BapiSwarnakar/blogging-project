@@ -13,7 +13,7 @@ public class JwtResponse {
     private String tokenType;
     private Long expiresIn; // Access token expiration in seconds
     private Long id;
-    private String username;
+    private String name;
     private String email;
     private List<String> permissions;
     private List<String> roles;

@@ -118,7 +118,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             .orElseThrow(() -> new RuntimeException("ADMIN role not found"));
         
         UserEntity admin = UserEntity.builder()
-            .username("admin")
+            .name("admin")
             .password(passwordEncoder.encode("Admin@123"))
             .email("admin@example.com")
             .roles(Set.of(adminRole))
@@ -137,7 +137,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         
         // Manager user
         UserEntity manager = UserEntity.builder()
-            .username("manager")
+            .name("manager")
             .password(passwordEncoder.encode("Manager@123"))
             .email("manager@example.com")
             .roles(Set.of(managerRole))
@@ -145,7 +145,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         
         // Regular user
         UserEntity regularUser = UserEntity.builder()
-            .username("user")
+            .name("user")
             .password(passwordEncoder.encode("User@123"))
             .email("user@example.com")
             .roles(Set.of(userRole))

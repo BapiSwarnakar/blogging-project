@@ -1,6 +1,9 @@
 package com.stech.authentication.entity;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,13 +44,15 @@ public class RefreshTokenEntity {
     private UserEntity user;
 
     @Column(nullable = false)
-    private Instant expiryDate;
+    private Instant expiryDate; //utc time
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean revoked = false;
 
+    @CreationTimestamp
     @Column(nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     private String ipAddress;
 

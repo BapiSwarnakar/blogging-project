@@ -7,7 +7,7 @@ public interface RefreshTokenService {
     /**
      * Create and save a new refresh token for a user
      */
-    RefreshTokenEntity createRefreshToken(String username, String ipAddress, String userAgent);
+    RefreshTokenEntity createRefreshToken(String email, String ipAddress, String userAgent);
     
     /**
      * Verify if refresh token is valid and not expired
@@ -27,7 +27,7 @@ public interface RefreshTokenService {
     /**
      * Revoke all refresh tokens for a user
      */
-    void revokeAllUserTokens(String username);
+    void revokeAllUserTokens(String email);
     
     /**
      * Clean up expired tokens

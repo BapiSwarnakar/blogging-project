@@ -6,12 +6,12 @@ import com.stech.authentication.dto.request.RefreshTokenRequest;
 import com.stech.authentication.dto.request.SignupRequest;
 import com.stech.authentication.dto.response.JwtResponse;
 import com.stech.authentication.dto.response.PermissionValidationResponse;
-import com.stech.authentication.dto.response.UserResponse;
+
 
 public interface AuthService {
     JwtResponse authenticateUser(LoginRequest loginRequest, String ipAddress, String userAgent);
-    UserResponse registerUser(SignupRequest signUpRequest);
+    JwtResponse registerUser(SignupRequest signUpRequest, String ipAddress, String userAgent);
     PermissionValidationResponse validateTokenAndPermissions(PermissionValidationRequest request);
-    JwtResponse refreshAccessToken(RefreshTokenRequest request);
+    JwtResponse refreshAccessToken(RefreshTokenRequest request, String ipAddress, String userAgent);
     void logout(String refreshToken);
 }

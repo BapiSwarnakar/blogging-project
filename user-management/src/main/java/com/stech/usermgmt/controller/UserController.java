@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     // Use permission slug from database
-    @PreAuthorize("hasAuthority('USER_READ')")
+    @PreAuthorize("hasAuthority(UserManagementServicePermissionList.USER_READ)")
     @GetMapping("/me")
     public ResponseEntity<String> getUser() {
         return ResponseEntity.ok("User details");

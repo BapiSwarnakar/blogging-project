@@ -14,14 +14,14 @@ import com.stech.authentication.entity.UserEntity;
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
-    Optional<UserEntity> findByUsername(String username);
+    Optional<UserEntity> findByEmail(String email);
 
     @Query("SELECT DISTINCT u FROM UserEntity u " +
            "LEFT JOIN FETCH u.roles r " +
            "LEFT JOIN FETCH r.permissions " +
            "LEFT JOIN FETCH u.directPermissions " +
-           "WHERE u.username = :username")
-    Optional<UserEntity> findByUsernameWithRolesAndPermissions(String username);
+           "WHERE u.email = :email")
+    Optional<UserEntity> findByEmailWithRolesAndPermissions(String email);
 
     @Query("SELECT DISTINCT p FROM UserEntity u " +
            "JOIN u.roles r " +
@@ -34,5 +34,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
            "WHERE u.id = :userId")
     Set<PermissionEntity> findDirectPermissions(@Param("userId") Long userId);
 
-    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
+
+//     Optional<RefreshTokenEntity> findByEmail(String email);
+    
 }

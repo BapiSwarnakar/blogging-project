@@ -22,12 +22,12 @@ import com.stech.authentication.dto.request.RefreshTokenRequest;
 import com.stech.authentication.dto.request.SignupRequest;
 import com.stech.authentication.dto.response.JwtResponse;
 import com.stech.authentication.dto.response.PermissionValidationResponse;
-import com.stech.authentication.dto.response.UserResponse;
+
 import com.stech.authentication.exception.CustomAuthException;
 import com.stech.authentication.exception.CustomBadRequestException;
 import com.stech.authentication.exception.CustomResourceNotFoundException;
-import com.stech.authentication.helper.GlobalApiResponse;
 import com.stech.authentication.service.AuthService;
+import com.stech.common.library.GlobalApiResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -90,7 +90,7 @@ public class AuthController {
             @Valid @RequestBody LoginRequest loginRequest,
             jakarta.servlet.http.HttpServletRequest request) {
         try {
-            log.info("Authenticating user: {}", loginRequest.getUsername());
+            log.info("Authenticating user: {}", loginRequest.getEmail());
             
             // Extract IP address and user agent
             String ipAddress = getClientIp(request);
@@ -100,7 +100,7 @@ public class AuthController {
             return ResponseEntity.ok(GlobalApiResponse.success(jwtResponse, "User authenticated successfully"));
             
         } catch (CustomAuthException e) {
-            log.error("Authentication failed for user {}: {}", loginRequest.getUsername(), e.getMessage());
+            log.error("Authentication failed for user {}: {}", loginRequest.getEmail(), e.getMessage());
             return ResponseEntity.status(401)
                 .body(GlobalApiResponse.error(AUTHENTICATION_FAILED_MESSAGE, e.getMessage()));
                 
@@ -165,11 +165,17 @@ public class AuthController {
                     schema = @Schema(implementation = SignupRequest.class)
                 )
             )
-            @Valid @RequestBody SignupRequest signUpRequest) {
+            @Valid @RequestBody SignupRequest signUpRequest,
+            HttpServletRequest request) {
         try {
-            log.info("Registering new user: {}", signUpRequest.getUsername());
-            UserResponse userResponse = authService.registerUser(signUpRequest);
-            return ResponseEntity.ok(GlobalApiResponse.success(userResponse, "User registered successfully"));
+            log.info("Registering new user: {}", signUpRequest.getName());
+            
+            // Extract IP address and user agent
+            String ipAddress = getClientIp(request);
+            String userAgent = request.getHeader("User-Agent");
+            
+            JwtResponse jwtResponse = authService.registerUser(signUpRequest, ipAddress, userAgent);
+            return ResponseEntity.ok(GlobalApiResponse.success(jwtResponse, "User registered successfully"));
             
         } catch (com.stech.authentication.exception.CustomResourceAlreadyExistsException e) {
             log.error("User already exists: {}", e.getMessage());
@@ -251,10 +257,15 @@ public class AuthController {
                     schema = @Schema(implementation = RefreshTokenRequest.class)
                 )
             )
-            @Valid @RequestBody RefreshTokenRequest request) {
+            @Valid @RequestBody RefreshTokenRequest request,
+            HttpServletRequest httpServletRequest) {
         try {
             log.info("Refreshing access token");
-            JwtResponse jwtResponse = authService.refreshAccessToken(request);
+            // Extract IP address and user agent
+            String ipAddress = getClientIp(httpServletRequest);
+            String userAgent = httpServletRequest.getHeader("User-Agent");
+
+            JwtResponse jwtResponse = authService.refreshAccessToken(request, ipAddress, userAgent);
             return ResponseEntity.ok(GlobalApiResponse.success(jwtResponse, "Access token refreshed successfully"));
             
         } catch (SignatureException e) {

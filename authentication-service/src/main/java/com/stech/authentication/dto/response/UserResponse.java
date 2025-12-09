@@ -9,7 +9,7 @@ import lombok.Data;
 @Builder
 public class UserResponse {
     Long id; 
-    String username; 
+    String name; 
     String email; 
     Set<String> permissions;
 }

@@ -1,7 +1,11 @@
 package com.stech.authentication.entity;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -47,6 +51,18 @@ public class PermissionEntity {
 
     @Column(nullable = true)
     private String description;
+
+    @CreationTimestamp
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean isDeleted = false;
 
     @Builder.Default
     @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
