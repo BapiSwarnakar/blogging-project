@@ -121,7 +121,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-                log.debug("Successfully authenticated user: {} with authorities: {}", username, authorities);
+                log.info("JwtAuthenticationFilter: Authenticated user: {}, Authorities: {}", username, authorities);
             } else if (!JwtTokenLibrary.validateToken(jwt)) {
                 log.error("Invalid or expired JWT token for URL: {} {}", method, requestURI);
                 sendErrorResponse(response, 401, "JWT Token Error", "Invalid or expired JWT token. Please login again.");

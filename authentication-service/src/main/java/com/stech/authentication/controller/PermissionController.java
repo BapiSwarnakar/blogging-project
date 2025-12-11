@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.stech.authentication.dto.request.PermissionRequest;
+import com.stech.common.security.annotation.RequirePermission;
 import com.stech.authentication.entity.PermissionEntity;
 import com.stech.authentication.exception.CustomBadRequestException;
 import com.stech.authentication.exception.CustomResourceNotFoundException;
@@ -60,7 +61,7 @@ public class PermissionController {
         }
     }
 
-    @PreAuthorize("hasAuthority('" + AuthenticationServicePermissionList.PERMISSION_READ + "')")
+    @RequirePermission(authority = AuthenticationServicePermissionList.PERMISSION_READ)
     @GetMapping("/{id}")
     public ResponseEntity<GlobalApiResponse.ApiResult<Object>> getPermission(@PathVariable Long id) {
         try {
@@ -81,6 +82,7 @@ public class PermissionController {
     }
 
     @GetMapping
+    @RequirePermission(authority = "PERMISSION_READ")
     public ResponseEntity<GlobalApiResponse.ApiResult<Object>> getAllPermissions() {
         try {
             log.info("Fetching all permissions");

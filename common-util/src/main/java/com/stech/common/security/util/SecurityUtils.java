@@ -13,7 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  */
 public final class SecurityUtils {
 
-    private static final String ROLE_PREFIX = "ROLE_";
+    public static final String ROLE_PREFIX = "ASSIGN_ROLE_";
 
     private SecurityUtils() {
         // Private constructor to prevent instantiation

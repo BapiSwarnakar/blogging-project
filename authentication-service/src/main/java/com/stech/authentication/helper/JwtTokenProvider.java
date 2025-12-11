@@ -45,7 +45,7 @@ public class JwtTokenProvider {
 
         log.info("Generating access token for user: {}", authentication.getName());
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-
+        log.info("User authorities: {}", authentication.getAuthorities());
         String permissions = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));

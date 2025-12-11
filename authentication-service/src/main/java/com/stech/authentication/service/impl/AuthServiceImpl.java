@@ -37,6 +37,7 @@ import com.stech.authentication.repository.RoleRepository;
 import com.stech.authentication.repository.UserRepository;
 import com.stech.authentication.service.AuthService;
 import com.stech.authentication.service.RefreshTokenService;
+import com.stech.common.security.util.SecurityUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,7 +52,7 @@ public class AuthServiceImpl implements AuthService{
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final RefreshTokenService refreshTokenService;
-    private static final String ASSIGN_ROLE_PREFIX = "ASSIGN_ROLE_";
+    private static final String ASSIGN_ROLE_PREFIX = SecurityUtils.ROLE_PREFIX;
 
     AuthServiceImpl(AuthenticationManager authenticationManager,
         UserRepository userRepository,

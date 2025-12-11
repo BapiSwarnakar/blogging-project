@@ -27,7 +27,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     private static final String AUTH_SERVICE_URL = "http://AUTH-SERVICE/api/v1/auth/validate-token";
     private static final String IP_REGEX = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
     private static final String API_PATH_PREFIX = "/api";
-
+    private static final String IP_ADDRESS = "ipAddress";
     private final RouteValidator validator;
     private final WebClient.Builder webClientBuilder;
     private final Gson gson;
@@ -65,7 +65,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     }
 
     private String getAuthorizationHeader(ServerWebExchange exchange) {
-        log.info("Authorization header: {}", exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION));
+        //log.info("Authorization header: {}", exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION));
         if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
             throw new CustomUnauthorizedException("Missing authorization header");
         }
@@ -84,7 +84,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         requestMap.put("token", token);
         requestMap.put("requiredPermissionsApi", apiPath);
         requestMap.put("requiredPermissionsMethod", method.name());
-        requestMap.put("ipAddress", extractClientIp(exchange));
+        requestMap.put(IP_ADDRESS, extractClientIp(exchange));
         return requestMap;
     }
 
@@ -93,7 +93,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 .post()
                 .uri(AUTH_SERVICE_URL)
                 .contentType(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + requestMap.get("token"))
+                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + requestMap.get("token"))
                 .bodyValue(requestMap)
                 .retrieve()
                 .toEntity(String.class);
@@ -109,16 +109,16 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         }
 
         String responseBody = responseEntity.getBody();
-        log.info("Response Body: {}", responseBody);
+        // log.info("Response Body: {}", responseBody);
         
         JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
-        log.info("Response Body Message processValidToken: {}", jsonResponse);
+        // log.info("Response Body Message processValidToken: {}", jsonResponse);
         JsonObject data = jsonResponse.get("data").getAsJsonObject();
-        String ipAddress = data.get("ipAddress").getAsString();
+        String ipAddress = data.get(IP_ADDRESS).getAsString();
         String userId = data.get("userId").getAsString();
 
         exchange.getRequest().mutate()
-                .header("ipAddress", ipAddress)
+                .header(IP_ADDRESS, ipAddress)
                 .header("userId", userId)
                 .build();
 
@@ -168,6 +168,8 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     }
 
     public static class Config {
-        // Configuration properties for the filter if needed
+        Config() {
+            log.info("AuthenticationFilter Config");
+        }
     }
 }
