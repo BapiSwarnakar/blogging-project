@@ -10,8 +10,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -68,6 +71,34 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(ResourceAccessException.class)
+    public ResponseEntity<ErrorResponse> handleResourceAccessException(ResourceAccessException ex) {
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.SERVICE_UNAVAILABLE.value(),
+            "Service Unavailable",
+            "External service is currently unavailable. Please try again later."
+        );
+        return new ResponseEntity<>(error, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @ExceptionHandler(CustomRuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleCustomRuntimeException(CustomRuntimeException ex) {
+        if (ex.getCause() instanceof org.springframework.web.client.ResourceAccessException) {
+             ErrorResponse error = new ErrorResponse(
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "Service Unavailable",
+                "External service is currently unavailable. Please try again later."
+            );
+            return new ResponseEntity<>(error, HttpStatus.SERVICE_UNAVAILABLE);
+        }
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "Internal Server Error",
+            ex.getMessage()
+        );
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         List<String> errors = ex.getBindingResult()
@@ -112,6 +143,44 @@ public class GlobalExceptionHandler {
             ex.getMessage()
         );
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex) {
+        if (ex.getMessage() != null && ex.getMessage().contains("No instances available")) {
+            ErrorResponse error = new ErrorResponse(
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "Service Unavailable",
+                ex.getMessage()
+            );
+            return new ResponseEntity<>(error, HttpStatus.SERVICE_UNAVAILABLE);
+        }
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "Internal Server Error",
+            "An unexpected error occurred"
+        );
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(CallNotPermittedException.class)
+    public ResponseEntity<ErrorResponse> handleCallNotPermittedException(CallNotPermittedException ex) {
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.SERVICE_UNAVAILABLE.value(),
+            "Service Unavailable",
+            "The service is currently unavailable. Please try again later."
+        );
+        return new ResponseEntity<>(error, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @ExceptionHandler(RequestNotPermitted.class)
+    public ResponseEntity<ErrorResponse> handleRequestNotPermitted(RequestNotPermitted ex) {
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.TOO_MANY_REQUESTS.value(),
+            "Too Many Requests",
+            "Rate limit exceeded. Please try again later."
+        );
+        return new ResponseEntity<>(error, HttpStatus.TOO_MANY_REQUESTS);
     }
 
     @ExceptionHandler(Exception.class)

@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,13 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.stech.authentication.dto.request.PermissionRequest;
-import com.stech.common.security.annotation.RequirePermission;
 import com.stech.authentication.entity.PermissionEntity;
 import com.stech.authentication.exception.CustomBadRequestException;
 import com.stech.authentication.exception.CustomResourceNotFoundException;
 import com.stech.authentication.service.PermissionService;
 import com.stech.common.library.GlobalApiResponse;
 import com.stech.common.permissions.AuthenticationServicePermissionList;
+import com.stech.common.security.annotation.RequirePermission;
 
 import lombok.extern.slf4j.Slf4j;
 

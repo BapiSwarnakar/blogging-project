@@ -55,7 +55,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 Map<String, String> requestMap = createValidationRequest(token, extractedPath, method, exchange);
 
                 return validateToken(requestMap)
-                        .flatMap(responseEntity -> processValidToken(responseEntity, exchange))
+                        .flatMap(responseEntity -> processValidToken(responseEntity, exchange, authHeader))
                         .then(chain.filter(exchange))
                         .onErrorResume(WebClientResponseException.class, this::handleWebClientError);
             } catch (Exception e) {
@@ -99,7 +99,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 .toEntity(String.class);
     }
 
-    private Mono<Void> processValidToken(ResponseEntity<String> responseEntity, ServerWebExchange exchange) {
+    private Mono<Void> processValidToken(ResponseEntity<String> responseEntity, ServerWebExchange exchange, String authHeader) {
         HttpStatusCode status = responseEntity.getStatusCode();
         if (!status.is2xxSuccessful()) {
             String errorMsg = status.is4xxClientError() 
@@ -120,6 +120,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         exchange.getRequest().mutate()
                 .header(IP_ADDRESS, ipAddress)
                 .header("userId", userId)
+                .header(HttpHeaders.AUTHORIZATION, authHeader)
                 .build();
 
         return Mono.empty();

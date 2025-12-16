@@ -66,6 +66,18 @@
             <artifactId>spring-boot-starter-aop</artifactId>
             <version>3.2.2</version>
         </dependency>
+        <!-- Resilience4j -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+        <!-- Actuator (optional but recommended) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <version>3.2.2</version>
+        </dependency>
 
     </dependencies>
 </project>

@@ -10,7 +10,7 @@ import com.stech.common.security.annotation.RequirePermission;
 
 
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/user")
 public class UserController {
 
     // Use permission slug from database
@@ -25,6 +25,15 @@ public class UserController {
     @GetMapping("/all")
     public ResponseEntity<String> getAllUsers() {
         return ResponseEntity.ok("All users");
+    }
+
+    @GetMapping("/internal/all")
+    public ResponseEntity<String> getAllUsersInternal() {
+        try {
+            return ResponseEntity.status(500).body("All users");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Failed to get all users");
+        }
     }
     
 }
