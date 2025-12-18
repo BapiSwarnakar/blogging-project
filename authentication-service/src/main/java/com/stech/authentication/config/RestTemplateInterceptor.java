@@ -2,6 +2,7 @@ package com.stech.authentication.config;
 
 import java.io.IOException;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
@@ -20,9 +21,9 @@ public class RestTemplateInterceptor implements ClientHttpRequestInterceptor {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attributes != null) {
             HttpServletRequest originalRequest = attributes.getRequest();
-            String token = originalRequest.getHeader("Authorization");
+            String token = originalRequest.getHeader(HttpHeaders.AUTHORIZATION);
             if (token != null && !token.isEmpty()) {
-                request.getHeaders().add("Authorization", token);
+                request.getHeaders().add(HttpHeaders.AUTHORIZATION, token);
             }
         }
         
