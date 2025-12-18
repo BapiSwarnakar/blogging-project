@@ -41,8 +41,7 @@ public class WebSecurityConfig {
             "/favicon.ico",
             "/error",
             // Actuator endpoints
-            "/actuator/health",
-            "/actuator/info",
+            "/actuator/**",
             // API Documentation
             "/api-docs/**",
             "/api-docs.yaml"

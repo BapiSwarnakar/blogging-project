@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import com.stech.authentication.exception.CustomRuntimeException;
 import com.stech.authentication.external.ExternalUserService;
 import com.stech.common.library.CommunicationServiceUtil;
 import com.stech.common.resilience.annotation.GlobalCircuitBreaker;
@@ -33,9 +32,9 @@ public class ExternalUserServiceImpl implements ExternalUserService {
     }
 
     @Override
-    @GlobalRetry
-    @GlobalRateLimiter
-    @GlobalCircuitBreaker
+    @GlobalRetry(serviceName = "User Management Service")
+    @GlobalRateLimiter(serviceName = "User Management Service")
+    @GlobalCircuitBreaker(serviceName = "User Management Service")
     public String getUserAll() {
         String url = CommunicationServiceUtil.getUserManagementMicroserviceUrl() + "/internal/all";
         log.info("Executing getUserAll from Authentication Service...");

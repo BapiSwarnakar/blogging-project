@@ -5,11 +5,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
-
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@RateLimiter(name = "globalRateLimiter")
 public @interface GlobalRateLimiter {
+    String instanceName() default "";
+    String serviceName() default "External Service";
 }
-

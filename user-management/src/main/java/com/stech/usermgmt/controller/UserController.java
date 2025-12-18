@@ -30,7 +30,7 @@ public class UserController {
     @GetMapping("/internal/all")
     public ResponseEntity<String> getAllUsersInternal() {
         try {
-            return ResponseEntity.status(500).body("All users");
+            return ResponseEntity.status(200).body("All users");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Failed to get all users");
         }

@@ -5,10 +5,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@CircuitBreaker(name = "globalCircuitBreaker")
 public @interface GlobalCircuitBreaker {
+    String instanceName() default "";
+    String serviceName() default "External Service";
 }
