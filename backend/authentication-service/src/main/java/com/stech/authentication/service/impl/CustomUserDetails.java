@@ -54,7 +54,7 @@ public class CustomUserDetails implements UserDetails {
         }else {
             // Add roles
             user.getRoles().forEach(role -> {
-                // authoritiesSet.add(new SimpleGrantedAuthority(SecurityUtils.ROLE_PREFIX + role.getName().toUpperCase()));
+                authoritiesSet.add(new SimpleGrantedAuthority(SecurityUtils.ROLE_PREFIX + role.getName().toUpperCase()));
                 // Add permissions from roles
                 role.getPermissions().forEach(permission -> 
                     authoritiesSet.add(new SimpleGrantedAuthority(permission.getSlug())));
