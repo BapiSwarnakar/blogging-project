@@ -1,28 +1,21 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { useAuth } from "../contexts/AuthContext";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { loginUser } from "../store/slices/authSlice";
 
 export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { isLoading, error } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setIsLoading(true);
 
-    try {
-      await login(email, password);
+    const resultAction = await dispatch(loginUser({ email, password }));
+    if (loginUser.fulfilled.match(resultAction)) {
       navigate("/admin");
-    } catch (err) {
-      console.error("Login attempt failed:", err);
-      setError("Invalid email or password");
-    } finally {
-      setIsLoading(false);
     }
   };
 

@@ -1,0 +1,15 @@
+com\stech\apigateway\filter\RouteValidator.class
+com\stech\apigateway\exception\CustomResourceNotFoundException.class
+com\stech\apigateway\exception\CustomAuthException.class
+com\stech\apigateway\exception\CustomOperationNotAllowedException.class
+com\stech\apigateway\filter\AuthenticationFilter.class
+com\stech\apigateway\exception\CustomNotAcceptableException.class
+com\stech\apigateway\exception\CustomResourceAlreadyExistsException.class
+com\stech\apigateway\ApiGatewayApplication.class
+com\stech\apigateway\filter\AuthenticationFilter$Config.class
+com\stech\apigateway\exception\CustomBadRequestException.class
+com\stech\apigateway\exception\GlobalExceptionHandler.class
+com\stech\apigateway\exception\CustomJwtTokenException.class
+com\stech\apigateway\config\AppConfig.class
+com\stech\apigateway\exception\CustomUnauthorizedException.class
+com\stech\apigateway\exception\ErrorResponse.class

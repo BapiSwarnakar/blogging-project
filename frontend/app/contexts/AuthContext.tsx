@@ -1,15 +1,9 @@
-import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from "react";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  permissions: string[];
-}
+import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { loginUser, logout as logoutAction } from "../store/slices/authSlice";
 
 interface AuthContextType {
-  user: User | null;
+  user: any;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -20,78 +14,40 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  readonly children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Check if user is logged in (from localStorage or API)
-    const checkAuth = async () => {
-      try {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
-      } catch (error) {
-        console.error("Error checking auth:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
+export function AuthProvider({ children }: { readonly children: ReactNode }) {
+  const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
 
   const login = async (email: string, password: string) => {
-    try {
-      // Mock login implementation
-      const mockUser: User = {
-        id: "1",
-        name: "Admin User",
-        email: email,
-        role: "admin",
-        permissions: ["users.create", "users.edit", "users.delete", "posts.view", "posts.create"],
-      };
-
-      setUser(mockUser);
-      localStorage.setItem("user", JSON.stringify(mockUser));
-    } catch (error) {
-      console.error("Login error:", error);
-      throw error;
-    }
+    await dispatch(loginUser({ email, password }));
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
+    dispatch(logoutAction());
   };
 
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    // Admin role has all permissions
-    if (user.role === "admin") return true;
-    return user.permissions.includes(permission);
+    // Check roles for full access or permissions array
+    if (user.roles?.includes("ADMIN")) return true;
+    return user.permissions?.includes(permission);
   };
 
   const hasAnyPermission = (permissions: string[]): boolean => {
     if (!user) return false;
-    if (user.role === "admin") return true;
-    return permissions.some((permission) => user.permissions.includes(permission));
+    if (user.roles?.includes("ADMIN")) return true;
+    return permissions.some((permission) => user.permissions?.includes(permission));
   };
 
   const value = useMemo(() => ({
     user,
-    isAuthenticated: !!user,
+    isAuthenticated,
     isLoading,
     login,
     logout,
     hasPermission,
     hasAnyPermission,
-  }), [user, isLoading]);
+  }), [user, isAuthenticated, isLoading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
