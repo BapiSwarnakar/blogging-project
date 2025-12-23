@@ -10,7 +10,7 @@ export function meta() {
 
 export default function AdminUsersPage() {
   return (
-    <PrivateRoute requiredPermission="users.view">
+    <PrivateRoute requiredPermission="USER_READ">
       <UsersPage />
     </PrivateRoute>
   );

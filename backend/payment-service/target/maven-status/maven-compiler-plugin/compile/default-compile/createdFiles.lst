@@ -1,4 +1,0 @@
-com\stech\payment\controller\PaymentController.class
-com\stech\payment\config\SwaggerConfig.class
-com\stech\payment\config\WebSecurityConfig.class
-com\stech\payment\PaymentServiceApplication.class

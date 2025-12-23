@@ -10,7 +10,7 @@ export function meta() {
 
 export default function AdminCreateUserPage() {
   return (
-    <PrivateRoute requiredPermission="users.create">
+    <PrivateRoute requiredPermission="USER_CREATE">
       <CreateUserPage />
     </PrivateRoute>
   );

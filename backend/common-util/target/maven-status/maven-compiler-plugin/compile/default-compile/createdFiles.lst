@@ -1,8 +1,0 @@
-com\stech\common\security\config\BaseSecurityConfig.class
-com\stech\common\security\RolePermissionMapping.class
-com\stech\common\security\filter\CommonJwtAuthenticationFilter.class
-com\stech\common\security\PermissionReference.class
-com\stech\common\library\JwtTokenLibrary.class
-com\stech\common\Main.class
-com\stech\common\security\RoleReference.class
-com\stech\common\security\util\SecurityUtils.class
