@@ -9,7 +9,7 @@ export function meta() {
 
 export default function AdminRolesListPage() {
   return (
-    <PrivateRoute requiredPermission="roles.view">
+    <PrivateRoute requiredPermission="ROLE_READ">
       <RolesList />
     </PrivateRoute>
   );

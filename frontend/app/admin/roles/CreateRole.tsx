@@ -9,12 +9,13 @@ export function CreateRolePage() {
   
   // Mock permissions list for selection
   const availablePermissions = [
-    { code: "users.view", label: "View Users" },
-    { code: "users.create", label: "Create Users" },
-    { code: "users.edit", label: "Edit Users" },
-    { code: "users.delete", label: "Delete Users" },
-    { code: "posts.view", label: "View Posts" },
-    { code: "posts.create", label: "Create Posts" },
+    { code: "USER_READ", label: "View Users" },
+    { code: "USER_CREATE", label: "Create Users" },
+    { code: "USER_UPDATE", label: "Edit Users" },
+    { code: "USER_DELETE", label: "Delete Users" },
+    { code: "ROLE_READ", label: "View Roles" },
+    { code: "ROLE_CREATE", label: "Create Roles" },
+    { code: "PERMISSION_READ", label: "View Permissions" },
   ];
 
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);

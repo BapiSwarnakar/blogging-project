@@ -10,7 +10,7 @@ export function meta() {
 
 export default function AdminEditUserPage() {
   return (
-    <PrivateRoute requiredPermission="users.edit">
+    <PrivateRoute requiredPermission="USER_UPDATE">
       <EditUserPage />
     </PrivateRoute>
   );

@@ -83,7 +83,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </li>
 
           {/* Users Dropdown Menu */}
-          {hasAnyPermission(["users.view", "users.create", "users.edit", "users.delete"]) && (
+          {hasAnyPermission(["USER_READ", "USER_CREATE", "USER_UPDATE", "USER_DELETE"]) && (
             <li>
               <button
                 onClick={() => setUsersDropdownOpen(!usersDropdownOpen)}
@@ -109,7 +109,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
               {usersDropdownOpen && (
                 <ul className="mt-2 space-y-1 pl-4">
-                  {hasPermission("users.view") && (
+                  {hasPermission("USER_READ") && (
                     <li>
                       <Link
                         to="/admin/users"
@@ -126,7 +126,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       </Link>
                     </li>
                   )}
-                  {hasPermission("users.create") && (
+                  {hasPermission("USER_CREATE") && (
                     <li>
                       <Link
                         to="/admin/users/create"
@@ -147,7 +147,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </li>
           )}
           {/* Roles Dropdown Menu */}
-          {hasAnyPermission(["roles.view", "roles.create", "roles.edit", "roles.delete"]) && (
+          {hasAnyPermission(["ROLE_READ", "ROLE_CREATE", "ROLE_UPDATE", "ROLE_DELETE"]) && (
             <li>
               <button
                 onClick={() => setRolesDropdownOpen(!rolesDropdownOpen)}
@@ -173,7 +173,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
               {rolesDropdownOpen && (
                 <ul className="mt-2 space-y-1 pl-4">
-                  {hasPermission("roles.view") && (
+                  {hasPermission("ROLE_READ") && (
                     <li>
                       <Link
                         to="/admin/roles"
@@ -190,7 +190,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       </Link>
                     </li>
                   )}
-                  {hasPermission("roles.create") && (
+                  {hasPermission("ROLE_CREATE") && (
                     <li>
                       <Link
                         to="/admin/roles/create"
@@ -211,7 +211,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </li>
           )}
           {/* Permissions Dropdown Menu */}
-          {hasAnyPermission(["permissions.view", "permissions.create", "permissions.edit", "permissions.delete"]) && (
+          {hasAnyPermission(["PERMISSION_READ", "PERMISSION_CREATE", "PERMISSION_UPDATE", "PERMISSION_DELETE"]) && (
             <li>
               <button
                 onClick={() => setPermissionsDropdownOpen(!permissionsDropdownOpen)}
@@ -237,7 +237,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
               {permissionsDropdownOpen && (
                 <ul className="mt-2 space-y-1 pl-4">
-                  {hasPermission("permissions.view") && (
+                  {hasPermission("PERMISSION_READ") && (
                     <li>
                       <Link
                         to="/admin/permissions"
@@ -254,7 +254,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       </Link>
                     </li>
                   )}
-                  {hasPermission("permissions.create") && (
+                  {hasPermission("PERMISSION_CREATE") && (
                     <li>
                       <Link
                         to="/admin/permissions/create"

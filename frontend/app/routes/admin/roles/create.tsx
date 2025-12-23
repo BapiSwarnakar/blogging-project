@@ -9,7 +9,7 @@ export function meta() {
 
 export default function AdminCreateRolePage() {
   return (
-    <PrivateRoute requiredPermission="roles.create">
+    <PrivateRoute requiredPermission="ROLE_CREATE">
       <CreateRolePage />
     </PrivateRoute>
   );

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const baseURL = "http://127.0.0.1:9999/api/v1";
+const baseURL = "http://localhost:9999/api/v1";
 
 // Public Axios Instance - For requests that don't need authentication
 export const publicAxios = axios.create({
@@ -8,6 +8,7 @@ export const publicAxios = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 // Private Axios Instance - For requests that need authentication
@@ -16,6 +17,7 @@ export const privateAxios = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 // Request interceptor for adding auth token to privateAxios

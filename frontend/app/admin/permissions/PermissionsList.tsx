@@ -11,14 +11,14 @@ interface Permission {
 }
 
 const mockPermissions: Permission[] = [
-  { id: "1", name: "View Users", code: "users.view", module: "Users", description: "Allows viewing the list of users." },
-  { id: "2", name: "Create User", code: "users.create", module: "Users", description: "Allows creating new users." },
-  { id: "3", name: "Edit User", code: "users.edit", module: "Users", description: "Allows editing existing users." },
-  { id: "4", name: "Delete User", code: "users.delete", module: "Users", description: "Allows deleting users." },
-  { id: "5", name: "View Posts", code: "posts.view", module: "Posts", description: "Allows viewing the list of posts." },
-  { id: "6", name: "Create Post", code: "posts.create", module: "Posts", description: "Allows creating new posts." },
-  { id: "7", name: "Edit Post", code: "posts.edit", module: "Posts", description: "Allows editing existing posts." },
-  { id: "8", name: "Delete Post", code: "posts.delete", module: "Posts", description: "Allows deleting posts." },
+  { id: "1", name: "View Users", code: "USER_READ", module: "Users", description: "Allows viewing the list of users." },
+  { id: "2", name: "Create User", code: "USER_CREATE", module: "Users", description: "Allows creating new users." },
+  { id: "3", name: "Edit User", code: "USER_UPDATE", module: "Users", description: "Allows editing existing users." },
+  { id: "4", name: "Delete User", code: "USER_DELETE", module: "Users", description: "Allows deleting users." },
+  { id: "5", name: "View Roles", code: "ROLE_READ", module: "Roles", description: "Allows viewing roles." },
+  { id: "6", name: "Create Role", code: "ROLE_CREATE", module: "Roles", description: "Allows creating roles." },
+  { id: "7", name: "View Permissions", code: "PERMISSION_READ", module: "Permissions", description: "Allows viewing permissions." },
+  { id: "8", name: "Create Permission", code: "PERMISSION_CREATE", module: "Permissions", description: "Allows creating permissions." },
 ];
 
 export function PermissionsList() {
