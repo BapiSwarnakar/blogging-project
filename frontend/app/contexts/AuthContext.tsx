@@ -1,13 +1,13 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { loginUser, logout as logoutAction } from "../store/slices/authSlice";
+import { loginUser, logoutUser } from "../store/slices/authSlice";
 
 interface AuthContextType {
   user: any;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: (refreshToken?: string) => Promise<void>;
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
 }
@@ -22,20 +22,20 @@ export function AuthProvider({ children }: { readonly children: ReactNode }) {
     await dispatch(loginUser({ email, password }));
   };
 
-  const logout = () => {
-    dispatch(logoutAction());
+  const logout = async (refreshToken?: string) => {
+    await dispatch(logoutUser(refreshToken));
   };
 
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    // Check roles for full access or permissions array
-    if (user.roles?.includes("ADMIN")) return true;
+    // Check permissions for full access or permissions array
+    if (user.permissions?.includes("FULL_ACCESS")) return true;
     return user.permissions?.includes(permission);
   };
 
   const hasAnyPermission = (permissions: string[]): boolean => {
     if (!user) return false;
-    if (user.roles?.includes("ADMIN")) return true;
+    if (user.permissions?.includes("FULL_ACCESS")) return true;
     return permissions.some((permission) => user.permissions?.includes(permission));
   };
 

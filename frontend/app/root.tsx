@@ -68,11 +68,14 @@ export function Layout({ children }: { readonly children: React.ReactNode }) {
 import { Provider } from "react-redux";
 import { store } from "./store";
 
+import { Toaster } from "react-hot-toast";
+
 export default function App() {
   return (
     <Provider store={store}>
       <AuthProvider>
         <Outlet />
+        <Toaster position="bottom-right" />
       </AuthProvider>
     </Provider>
   );

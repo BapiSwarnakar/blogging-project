@@ -14,11 +14,11 @@ export function Topbar({ onToggleSidebar, title }: TopbarProps) {
   
   // Get initials for profile picture fallback
   const initials = user?.name
-    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
+    ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()
     : 'U';
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout(user?.refreshToken);
     navigate("/login");
   };
 

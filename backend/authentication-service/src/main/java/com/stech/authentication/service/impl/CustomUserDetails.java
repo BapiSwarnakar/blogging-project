@@ -50,6 +50,9 @@ public class CustomUserDetails implements UserDetails {
         boolean isFullAccessCheck = getIsFullAccess(user);
         log.info("User {} has full access: {}", user.getName(), isFullAccessCheck);
         if (isFullAccessCheck) {
+            user.getRoles().forEach(role -> {
+                authoritiesSet.add(new SimpleGrantedAuthority(SecurityUtils.ROLE_PREFIX + role.getName().toUpperCase()));
+            });
             authoritiesSet.add(new SimpleGrantedAuthority("FULL_ACCESS"));
         }else {
             // Add roles

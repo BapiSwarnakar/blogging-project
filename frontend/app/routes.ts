@@ -10,6 +10,7 @@ export default [
     route("admin/users/:id/edit", "routes/admin/users/edit.tsx"),
     route("admin/roles", "routes/admin/roles/list.tsx"),
     route("admin/roles/create", "routes/admin/roles/create.tsx"),
+    route("admin/roles/:id/edit", "routes/admin/roles/edit.tsx"),
     route("admin/permissions", "routes/admin/permissions/list.tsx"),
     route("admin/permissions/create", "routes/admin/permissions/create.tsx"),
     route("*", "routes/$.tsx"), // Catch-all route for 404

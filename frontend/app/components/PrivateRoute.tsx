@@ -94,12 +94,6 @@ function PermissionDenied() {
         </p>
         <div className="flex gap-4 justify-center">
           <button
-            onClick={() => navigate(-1)}
-            className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            Go Back
-          </button>
-          <button
             onClick={() => navigate("/")}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >

@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
 import org.springframework.stereotype.Service;
 
 import com.stech.authentication.dto.request.RoleRequest;
@@ -91,20 +95,28 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public List<RoleEntity> getAllRoles() {
-        List<RoleEntity> roles = roleRepository.findAll();
-        return roles.stream()
-            .map(role -> {
-                role.setUsers(null); // Avoid loading users to prevent circular references
+    public Page<RoleEntity> getAllRoles(int page, int size, String sortBy, String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) 
+            ? Sort.by(sortBy).ascending()
+            : Sort.by(sortBy).descending();
+            
+        PageRequest pageRequest = PageRequest.of(page, size, sort);
+        Page<RoleEntity> rolesPage = roleRepository.findAll(pageRequest);
+        
+        // Handle circular references for each role in the page
+        rolesPage.getContent().forEach(role -> {
+            role.setUsers(null);
+            if (role.getPermissions() != null) {
                 role.setPermissions(role.getPermissions().stream()
                     .map(permission -> {
-                        permission.setRoles(null); // Avoid loading roles to prevent circular references
+                        permission.setRoles(null);
                         return permission;
                     })
                     .collect(Collectors.toSet()));
-                return role;
-            })
-            .toList();
+            }
+        });
+        
+        return rolesPage;
     }
 
     @Override
@@ -145,7 +157,9 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public void deleteRole(Long id) {
-        RoleEntity role = getRoleById(id);
+        RoleEntity role = roleRepository.findById(id)
+            .orElseThrow(() -> new CustomResourceNotFoundException("Role not found with id: " + id));
+        log.info("Role found with id: " + role.getUsers().size());
         if (role.getUsers() != null && !role.getUsers().isEmpty()) {
             throw new CustomOperationNotAllowedException(
                 "Cannot delete role assigned to users. First unassign the role from all users."

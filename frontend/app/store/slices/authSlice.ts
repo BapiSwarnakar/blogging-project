@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
-import { publicAxios } from "../../api/axiosInstance";
+import { publicAxios, privateAxios } from "../../api/axiosInstance";
 
 export interface UserData {
   accessToken: string;
@@ -106,9 +106,43 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload ?? "Login failed";
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = null;
+      })
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.user = null;
+        state.isAuthenticated = false;
+        // We can optionally set error here, but we usually just want them logged out
+        state.error = action.payload ?? "Logout failed";
       });
   },
 });
 
 export const { logout, clearError, setCredentials } = authSlice.actions;
+
+export const logoutUser = createAsyncThunk<
+  void,
+  string | undefined,
+  { rejectValue: string }
+>(
+  "auth/logout",
+  async (refreshToken, { rejectWithValue }) => {
+    try {
+      await privateAxios.post("/auth/logout", { refreshToken });
+      localStorage.removeItem("auth_data");
+    } catch (error: any) {
+      // Even if the server fails, we clear local storage to ensure the user is logged out on the client
+      localStorage.removeItem("auth_data");
+      const errorMessage = 
+        error.response?.data?.message || 
+        error.message ||
+        "Logout failed";
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 export default authSlice.reducer;

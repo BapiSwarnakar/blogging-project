@@ -17,7 +17,7 @@ interface MenuItem {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { hasPermission, hasAnyPermission, logout } = useAuth();
+  const { hasPermission, hasAnyPermission, logout, user } = useAuth();
   const [usersDropdownOpen, setUsersDropdownOpen] = useState(false);
   const [rolesDropdownOpen, setRolesDropdownOpen] = useState(false);
   const [permissionsDropdownOpen, setPermissionsDropdownOpen] = useState(false);
@@ -41,8 +41,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isPermissionsActive = location.pathname.startsWith("/admin/permissions");
 
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout(user?.refreshToken);
     navigate("/login");
   };
 

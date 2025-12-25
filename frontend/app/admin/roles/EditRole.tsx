@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { AdminLayout } from "../layout/AdminLayout";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { fetchPermissions } from "../../store/slices/permissionsSlice";
-import { createRole } from "../../store/slices/rolesSlice";
+import { fetchRole, updateRole, clearCurrentRole } from "../../store/slices/rolesSlice";
 import { toast } from "react-hot-toast";
 
-export function CreateRolePage() {
+export function EditRolePage() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { permissions, isLoading: isLoadingPermissions } = useAppSelector((state) => state.permissions);
+  const { currentRole, isLoading: isLoadingRole, error: roleError } = useAppSelector((state) => state.roles);
   
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
@@ -18,7 +20,33 @@ export function CreateRolePage() {
 
   useEffect(() => {
     dispatch(fetchPermissions());
-  }, [dispatch]);
+    if (id) {
+      dispatch(fetchRole(Number(id)));
+    }
+    return () => {
+      dispatch(clearCurrentRole());
+    };
+  }, [dispatch, id]);
+
+  useEffect(() => {
+    if (currentRole) {
+      setRoleName(currentRole.name);
+      setDescription(currentRole.description);
+      setIsFullAccess(currentRole.fullAccess); // Note: Role interface uses fullAccess, payload uses isFullAccess
+      
+      // Map existing permissions to IDs
+      if (currentRole.permissions) {
+        setSelectedPermissions(currentRole.permissions.map((p: any) => p.id));
+      }
+    }
+  }, [currentRole]);
+
+  useEffect(() => {
+    if (roleError) {
+      toast.error(roleError);
+      navigate("/admin/roles");
+    }
+  }, [roleError, navigate]);
 
   const handlePermissionToggle = (id: number) => {
     setSelectedPermissions(prev => 
@@ -35,29 +63,44 @@ export function CreateRolePage() {
       return;
     }
 
+    if (!id) return;
+
     try {
-      await dispatch(createRole({
-        name: roleName,
-        description,
-        permissionId: isFullAccess ? [] : selectedPermissions,
-        isActive: true,
-        isFullAccess
+      await dispatch(updateRole({
+        id: Number(id),
+        payload: {
+          name: roleName,
+          description,
+          permissionId: isFullAccess ? [] : selectedPermissions,
+          isActive: currentRole?.active ?? true, // Preserve active status or default to true
+          isFullAccess
+        }
       })).unwrap();
       
-      toast.success("Role created successfully");
+      toast.success("Role updated successfully");
       navigate("/admin/roles");
     } catch (error: any) {
-      toast.error(error || "Failed to create role");
+      toast.error(error || "Failed to update role");
     }
   };
 
+  if (isLoadingRole) {
+    return (
+      <AdminLayout title="Edit Role">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
-    <AdminLayout title="Create New Role">
+    <AdminLayout title="Edit Role">
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="p-6 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Role Information</h3>
-            <p className="text-sm text-gray-500">Define the basic details of the role.</p>
+            <p className="text-sm text-gray-500">Update the details of the role.</p>
           </div>
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 gap-6">
@@ -169,7 +212,7 @@ export function CreateRolePage() {
             type="submit"
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all"
           >
-            Create Role
+            Update Role
           </button>
         </div>
       </form>

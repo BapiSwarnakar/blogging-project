@@ -12,11 +12,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
 
 import com.stech.authentication.dto.request.RoleRequest;
 import com.stech.authentication.entity.RoleEntity;
 import com.stech.authentication.exception.CustomBadRequestException;
+import com.stech.authentication.exception.CustomOperationNotAllowedException;
+import com.stech.authentication.exception.CustomResourceAlreadyExistsException;
 import com.stech.authentication.exception.CustomResourceNotFoundException;
 import com.stech.authentication.service.RoleService;
 import com.stech.common.library.GlobalApiResponse;
@@ -49,6 +53,10 @@ public class RoleController {
             log.error("Bad request during role creation: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(GlobalApiResponse.error(BAD_REQUEST_MESSAGE, e.getMessage()));
+        } catch (CustomResourceAlreadyExistsException e) {
+            log.error("Resource already exists during role creation: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(GlobalApiResponse.error(e.getMessage(),BAD_REQUEST_MESSAGE));
         } catch (Exception e) {
             log.error("Unexpected error creating role: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -75,11 +83,24 @@ public class RoleController {
 
     @PreAuthorize("hasAuthority('ROLE_READ')")
     @GetMapping
-    public ResponseEntity<GlobalApiResponse.ApiResult<Object>> getAllRoles() {
+    public ResponseEntity<GlobalApiResponse.ApiResult<Object>> getAllRoles(
+            @RequestParam(value = "page", defaultValue = "0", required = false) int page,
+            @RequestParam(value = "size", defaultValue = "10", required = false) int size,
+            @RequestParam(value = "sortBy", defaultValue = "id", required = false) String sortBy,
+            @RequestParam(value = "sortDir", defaultValue = "asc", required = false) String sortDir
+    ) {
         try {
-            log.info("Fetching all roles");
-            List<RoleEntity> roles = roleService.getAllRoles();
-            return ResponseEntity.ok(GlobalApiResponse.success(roles, "Roles fetched successfully"));
+            log.info("Fetching all roles with page: {}, size: {}", page, size);
+            Page<RoleEntity> roles = roleService.getAllRoles(page, size, sortBy, sortDir);
+            
+            GlobalApiResponse.PageInfo pageInfo = new GlobalApiResponse.PageInfo(
+                roles.getSize(),
+                roles.getNumber(),
+                roles.getTotalElements(),
+                roles.getTotalPages()
+            );
+            
+            return ResponseEntity.ok(GlobalApiResponse.success(roles.getContent(), "Roles fetched successfully", pageInfo));
         } catch (Exception e) {
             log.error("Unexpected error fetching all roles: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -121,6 +142,10 @@ public class RoleController {
             log.error("Role not found for deletion: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(GlobalApiResponse.error(NOT_FOUND_MESSAGE, e.getMessage()));
+        } catch (CustomOperationNotAllowedException e) {
+            log.error("Operation not allowed for deletion: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(GlobalApiResponse.error(e.getMessage(), "Operation not allowed"));
         } catch (Exception e) {
             log.error("Unexpected error deleting role: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
