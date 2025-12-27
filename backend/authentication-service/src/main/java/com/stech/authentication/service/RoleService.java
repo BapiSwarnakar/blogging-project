@@ -10,7 +10,7 @@ import com.stech.authentication.entity.RoleEntity;
 public interface RoleService {
     RoleEntity createRole(RoleRequest request);
     RoleEntity getRoleById(Long id);
-    Page<RoleEntity> getAllRoles(int page, int size, String sortBy, String sortDir);
+    Page<RoleEntity> getAllRoles(int page, int size, String sortBy, String sortDir, String search);
     RoleEntity updateRole(Long id, RoleRequest request);
     void deleteRole(Long id);
     RoleEntity addPermissionToRole(Long roleId, Long permissionId);

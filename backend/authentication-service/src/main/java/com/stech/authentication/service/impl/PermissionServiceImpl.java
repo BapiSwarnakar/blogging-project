@@ -1,7 +1,9 @@
 package com.stech.authentication.service.impl;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.stech.authentication.dto.request.PermissionRequest;
@@ -53,15 +55,24 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public List<PermissionEntity> getAllPermissions() {
-        List<PermissionEntity> permissionEntities = permissionRepository.findAll();
-        return permissionEntities.stream()
-            .map(permission -> {
-                permission.setRoles(null); // Avoid loading roles to prevent circular references
-                permission.setUsers(null); // Avoid loading users to prevent circular references
-                return permission;
-            })
-            .toList();
+    public Page<PermissionEntity> getAllPermissions(int page, int size, String sortBy, String sortDir, String search) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<PermissionEntity> permissionPage;
+
+        if (search != null && !search.trim().isEmpty()) {
+            permissionPage = permissionRepository.findByNameContainingIgnoreCaseOrSlugContainingIgnoreCaseOrCategoryContainingIgnoreCase(search, search, search, pageable);
+        } else {
+            permissionPage = permissionRepository.findAll(pageable);
+        }
+        
+        permissionPage.forEach(permission -> {
+            permission.setRoles(null); // Avoid loading roles to prevent circular references
+            permission.setUsers(null); // Avoid loading users to prevent circular references
+        });
+        
+        return permissionPage;
     }
 
     // Update

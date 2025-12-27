@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { AdminLayout } from "../layout/AdminLayout";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import { fetchPermissions } from "../../store/slices/permissionsSlice";
+import { fetchAllPermissions } from "../../store/slices/permissionsSlice";
 import { createRole } from "../../store/slices/rolesSlice";
 import { toast } from "react-hot-toast";
 
@@ -17,7 +17,7 @@ export function CreateRolePage() {
   const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
 
   useEffect(() => {
-    dispatch(fetchPermissions());
+    dispatch(fetchAllPermissions());
   }, [dispatch]);
 
   const handlePermissionToggle = (id: number) => {

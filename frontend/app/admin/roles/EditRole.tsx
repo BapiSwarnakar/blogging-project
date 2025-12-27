@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { AdminLayout } from "../layout/AdminLayout";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import { fetchPermissions } from "../../store/slices/permissionsSlice";
+import { fetchAllPermissions } from "../../store/slices/permissionsSlice";
 import { fetchRole, updateRole, clearCurrentRole } from "../../store/slices/rolesSlice";
 import { toast } from "react-hot-toast";
 
@@ -19,7 +19,7 @@ export function EditRolePage() {
   const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
 
   useEffect(() => {
-    dispatch(fetchPermissions());
+    dispatch(fetchAllPermissions());
     if (id) {
       dispatch(fetchRole(Number(id)));
     }

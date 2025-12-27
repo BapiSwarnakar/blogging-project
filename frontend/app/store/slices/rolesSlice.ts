@@ -47,14 +47,15 @@ interface FetchRolesArgs {
   size?: number;
   sortBy?: string;
   sortDir?: string;
+  search?: string;
 }
 
 export const fetchRoles = createAsyncThunk(
   "roles/fetchRoles",
-  async ({ page = 0, size = 10, sortBy = "id", sortDir = "asc" }: FetchRolesArgs = {}, { rejectWithValue }) => {
+  async ({ page = 0, size = 10, sortBy = "id", sortDir = "asc", search = "" }: FetchRolesArgs = {}, { rejectWithValue }) => {
     try {
       const response = await privateAxios.get(`/auth/roles`, {
-        params: { page, size, sortBy, sortDir },
+        params: { page, size, sortBy, sortDir, search },
       });
       return response.data;
     } catch (error: any) {

@@ -1,7 +1,5 @@
 package com.stech.authentication.controller;
 
-import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,7 +9,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
 
 import com.stech.authentication.dto.request.PermissionRequest;
 import com.stech.authentication.entity.PermissionEntity;
@@ -82,11 +82,25 @@ public class PermissionController {
 
     @GetMapping
     @RequirePermission(authority = "PERMISSION_READ")
-    public ResponseEntity<GlobalApiResponse.ApiResult<Object>> getAllPermissions() {
+    public ResponseEntity<GlobalApiResponse.ApiResult<Object>> getAllPermissions(
+            @RequestParam(value = "page", defaultValue = "0", required = false) int page,
+            @RequestParam(value = "size", defaultValue = "10", required = false) int size,
+            @RequestParam(value = "sortBy", defaultValue = "id", required = false) String sortBy,
+            @RequestParam(value = "sortDir", defaultValue = "asc", required = false) String sortDir,
+            @RequestParam(value = "search", required = false) String search
+    ) {
         try {
-            log.info("Fetching all permissions");
-            List<PermissionEntity> permissions = permissionService.getAllPermissions();
-            return ResponseEntity.ok(GlobalApiResponse.success(permissions, "Permissions fetched successfully"));
+            log.info("Fetching all permissions with page: {}, size: {}, search: {}", page, size, search);
+            Page<PermissionEntity> permissions = permissionService.getAllPermissions(page, size, sortBy, sortDir, search);
+            
+            GlobalApiResponse.PageInfo pageInfo = new GlobalApiResponse.PageInfo(
+                permissions.getSize(),
+                permissions.getNumber(),
+                permissions.getTotalElements(),
+                permissions.getTotalPages()
+            );
+            
+            return ResponseEntity.ok(GlobalApiResponse.success(permissions.getContent(), "Permissions fetched successfully", pageInfo));
             
         } catch (Exception e) {
             log.error("Unexpected error fetching all permissions: {}", e.getMessage(), e);

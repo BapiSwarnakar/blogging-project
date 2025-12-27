@@ -1,14 +1,15 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router";
 import { AdminLayout } from "../layout/AdminLayout";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import { createPermission } from "../../store/slices/permissionsSlice";
+import { fetchPermission, updatePermission, clearCurrentPermission } from "../../store/slices/permissionsSlice";
 import { toast } from "react-hot-toast";
 
-export function CreatePermissionPage() {
+export function EditPermissionPage() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { isLoading, error } = useAppSelector((state) => state.permissions);
+  const { currentPermission, isLoading, error } = useAppSelector((state) => state.permissions);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -19,14 +20,37 @@ export function CreatePermissionPage() {
     apiMethod: "GET"
   });
 
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchPermission(Number(id)));
+    }
+    return () => {
+      dispatch(clearCurrentPermission());
+    };
+  }, [dispatch, id]);
+
+  useEffect(() => {
+    if (currentPermission) {
+      setFormData({
+        name: currentPermission.name,
+        slug: currentPermission.slug,
+        category: currentPermission.category,
+        description: currentPermission.description,
+        apiUrl: currentPermission.apiUrl,
+        apiMethod: currentPermission.apiMethod
+      });
+    }
+  }, [currentPermission]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
     try {
-      await dispatch(createPermission(formData)).unwrap();
-      toast.success("Permission created successfully");
+      await dispatch(updatePermission({ id: Number(id), payload: formData })).unwrap();
+      toast.success("Permission updated successfully");
       navigate("/admin/permissions");
     } catch (err: any) {
-      toast.error(err || "Failed to create permission");
+      toast.error(err || "Failed to update permission");
     }
   };
 
@@ -35,13 +59,23 @@ export function CreatePermissionPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  if (isLoading && !currentPermission) {
+    return (
+      <AdminLayout title="Edit Permission">
+        <div className="flex justify-center p-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
-    <AdminLayout title="Create Permission">
+    <AdminLayout title="Edit Permission">
       <div className="max-w-3xl mx-auto">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">New Permission</h3>
-            <p className="text-sm text-gray-500">Add a new granular permission code to the system.</p>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Edit Permission</h3>
+            <p className="text-sm text-gray-500">Update granular permission details.</p>
           </div>
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {error && (
@@ -164,7 +198,7 @@ export function CreatePermissionPage() {
                 disabled={isLoading}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all font-medium disabled:opacity-50"
               >
-                {isLoading ? "Saving..." : "Save Permission"}
+                {isLoading ? "Saving..." : "Update Permission"}
               </button>
             </div>
           </form>

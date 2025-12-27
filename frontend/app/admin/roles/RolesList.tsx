@@ -12,12 +12,18 @@ export function RolesList() {
   const { roles, isLoading, error, pageInfo } = useAppSelector((state) => state.roles);
 
   useEffect(() => {
-    dispatch(fetchRoles({ page: 0, size: 9 }));
-  }, [dispatch]);
+    const handler = setTimeout(() => {
+      dispatch(fetchRoles({ page: 0, size: 9, search: searchTerm }));
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [dispatch, searchTerm]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && newPage < pageInfo.totalPages) {
-      dispatch(fetchRoles({ page: newPage, size: pageInfo.size }));
+      dispatch(fetchRoles({ page: newPage, size: pageInfo.size, search: searchTerm }));
     }
   };
 
@@ -38,10 +44,6 @@ export function RolesList() {
     }
   };
 
-  const filteredRoles = roles.filter((role) =>
-    role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    role.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <AdminLayout title="Roles Management">
@@ -81,7 +83,7 @@ export function RolesList() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRoles.map((role) => (
+              {roles.map((role) => (
                 <div
                   key={role.id}
                   className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-shadow"

@@ -95,13 +95,19 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public Page<RoleEntity> getAllRoles(int page, int size, String sortBy, String sortDir) {
+    public Page<RoleEntity> getAllRoles(int page, int size, String sortBy, String sortDir, String search) {
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) 
             ? Sort.by(sortBy).ascending()
             : Sort.by(sortBy).descending();
             
         PageRequest pageRequest = PageRequest.of(page, size, sort);
-        Page<RoleEntity> rolesPage = roleRepository.findAll(pageRequest);
+        Page<RoleEntity> rolesPage;
+        
+        if (search != null && !search.trim().isEmpty()) {
+            rolesPage = roleRepository.findByNameContainingIgnoreCase(search, pageRequest);
+        } else {
+            rolesPage = roleRepository.findAll(pageRequest);
+        }
         
         // Handle circular references for each role in the page
         rolesPage.getContent().forEach(role -> {

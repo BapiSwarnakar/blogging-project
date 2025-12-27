@@ -1,6 +1,5 @@
 package com.stech.authentication.controller;
 
-import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -87,11 +86,12 @@ public class RoleController {
             @RequestParam(value = "page", defaultValue = "0", required = false) int page,
             @RequestParam(value = "size", defaultValue = "10", required = false) int size,
             @RequestParam(value = "sortBy", defaultValue = "id", required = false) String sortBy,
-            @RequestParam(value = "sortDir", defaultValue = "asc", required = false) String sortDir
+            @RequestParam(value = "sortDir", defaultValue = "asc", required = false) String sortDir,
+            @RequestParam(value = "search", required = false) String search
     ) {
         try {
-            log.info("Fetching all roles with page: {}, size: {}", page, size);
-            Page<RoleEntity> roles = roleService.getAllRoles(page, size, sortBy, sortDir);
+            log.info("Fetching all roles with page: {}, size: {}, search: {}", page, size, search);
+            Page<RoleEntity> roles = roleService.getAllRoles(page, size, sortBy, sortDir, search);
             
             GlobalApiResponse.PageInfo pageInfo = new GlobalApiResponse.PageInfo(
                 roles.getSize(),
