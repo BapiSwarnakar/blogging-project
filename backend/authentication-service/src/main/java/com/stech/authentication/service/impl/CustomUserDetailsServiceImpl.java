@@ -29,7 +29,6 @@ public class CustomUserDetailsServiceImpl implements UserDetailsService {
                 log.error("User not found with email: {}", email);
                 return new UsernameNotFoundException("User not found with email: " + email);
             });
-        
         log.debug("User found: {}", user.getName());
         return new CustomUserDetails(user);
     }

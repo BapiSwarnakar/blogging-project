@@ -6,6 +6,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.stech.authentication.dto.request.LoginRequest;
+import com.stech.authentication.dto.request.PermissionValidationRequest;
+import com.stech.authentication.dto.request.RefreshTokenRequest;
+import com.stech.authentication.dto.request.SignupRequest;
+import com.stech.authentication.dto.response.JwtResponse;
+import com.stech.authentication.dto.response.PermissionValidationResponse;
+import com.stech.authentication.exception.CustomAuthException;
+import com.stech.authentication.exception.CustomBadRequestException;
+import com.stech.authentication.exception.CustomResourceNotFoundException;
+import com.stech.authentication.service.AuthService;
+import com.stech.common.library.GlobalApiResponse;
+
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
@@ -15,20 +27,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-import com.stech.authentication.dto.request.LoginRequest;
-import com.stech.authentication.dto.request.PermissionValidationRequest;
-import com.stech.authentication.dto.request.RefreshTokenRequest;
-import com.stech.authentication.dto.request.SignupRequest;
-import com.stech.authentication.dto.response.JwtResponse;
-import com.stech.authentication.dto.response.PermissionValidationResponse;
-
-import com.stech.authentication.exception.CustomAuthException;
-import com.stech.authentication.exception.CustomBadRequestException;
-import com.stech.authentication.exception.CustomResourceNotFoundException;
-import com.stech.authentication.service.AuthService;
-import com.stech.common.library.GlobalApiResponse;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -102,17 +100,17 @@ public class AuthController {
         } catch (CustomAuthException e) {
             log.error("Authentication failed for user {}: {}", loginRequest.getEmail(), e.getMessage());
             return ResponseEntity.status(401)
-                .body(GlobalApiResponse.error(AUTHENTICATION_FAILED_MESSAGE, e.getMessage()));
+                .body(GlobalApiResponse.error( e.getMessage(), AUTHENTICATION_FAILED_MESSAGE));
                 
         } catch (CustomBadRequestException e) {
             log.error("Bad request during authentication: {}", e.getMessage());
             return ResponseEntity.status(400)
-                .body(GlobalApiResponse.error(BAD_REQUEST_MESSAGE, e.getMessage()));
+                .body(GlobalApiResponse.error(e.getMessage(), BAD_REQUEST_MESSAGE));
                 
         } catch (CustomResourceNotFoundException e) {
             log.error("User not found: {}", e.getMessage());
             return ResponseEntity.status(401)
-                .body(GlobalApiResponse.error(AUTHENTICATION_FAILED_MESSAGE, "Invalid credentials"));
+                .body(GlobalApiResponse.error(e.getMessage(), AUTHENTICATION_FAILED_MESSAGE));
                 
         } catch (Exception e) {
             log.error("Unexpected error during authentication: {}", e.getMessage(), e);
@@ -168,7 +166,7 @@ public class AuthController {
             @Valid @RequestBody SignupRequest signUpRequest,
             HttpServletRequest request) {
         try {
-            log.info("Registering new user: {}", signUpRequest.getName());
+            log.info("Registering new user: {}", signUpRequest.getFirstName());
             
             // Extract IP address and user agent
             String ipAddress = getClientIp(request);

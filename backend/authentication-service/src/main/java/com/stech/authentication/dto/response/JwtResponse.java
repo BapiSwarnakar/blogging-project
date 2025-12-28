@@ -1,7 +1,7 @@
 package com.stech.authentication.dto.response;
 
 import java.util.List;
-
+import com.stech.authentication.enums.Gender;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,6 +15,7 @@ public class JwtResponse {
     private Long id;
     private String name;
     private String email;
+    private Gender gender;
     private List<String> permissions;
     private List<String> roles;
 }

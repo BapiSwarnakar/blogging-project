@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.stech.authentication.entity.RoleEntity;
 import com.stech.authentication.entity.UserEntity;
+import com.stech.authentication.enums.Gender;
 import com.stech.common.security.util.SecurityUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +24,10 @@ public class CustomUserDetails implements UserDetails {
     private final String username;
     private final String password;
     private final String email;
+    private final Gender gender;
     private final List<String> roles;
     private final boolean isFullAccess;
+    private final boolean isActive;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomUserDetails(UserEntity user) {
@@ -32,9 +35,11 @@ public class CustomUserDetails implements UserDetails {
         this.username = user.getName();
         this.password = user.getPassword();
         this.email = user.getEmail();
+        this.gender = user.getGender();
         this.roles = getRoles(user);
         this.isFullAccess = getIsFullAccess(user);
         this.authorities = getAuthorities(user);
+        this.isActive = user.isActive();
     }
 
     private List<String> getRoles(UserEntity user) {
@@ -72,6 +77,7 @@ public class CustomUserDetails implements UserDetails {
     // Getters
     public Long getId() { return id; }
     public String getEmail() { return email; }
+    public Gender getGender() { return gender; }
     public List<String> getRoles() { return roles; }
     public boolean getIsFullAccess() { return isFullAccess; }
     
@@ -81,6 +87,6 @@ public class CustomUserDetails implements UserDetails {
     @Override public boolean isAccountNonExpired() { return true; }
     @Override public boolean isAccountNonLocked() { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }
-    @Override public boolean isEnabled() { return true; }
+    @Override public boolean isEnabled() { return isActive; }
 
 }

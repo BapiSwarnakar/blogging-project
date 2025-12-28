@@ -1,5 +1,6 @@
 package com.stech.authentication.config;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 import com.stech.authentication.entity.PermissionEntity;
 import com.stech.authentication.entity.RoleEntity;
 import com.stech.authentication.entity.UserEntity;
+import com.stech.authentication.enums.Gender;
 import com.stech.authentication.repository.PermissionRepository;
 import com.stech.authentication.repository.RoleRepository;
 import com.stech.authentication.repository.UserRepository;
@@ -81,6 +83,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         RoleEntity adminRole = RoleEntity.builder()
             .name("ADMIN")
             .description("System Administrator with full access")
+            .isFullAccess(true)
             .permissions(new HashSet<>(allPermissions))
             .build();
         
@@ -118,8 +121,13 @@ public class DatabaseSeeder implements CommandLineRunner {
             .orElseThrow(() -> new RuntimeException("ADMIN role not found"));
         
         UserEntity admin = UserEntity.builder()
-            .name("admin")
-            .password(passwordEncoder.encode("Admin@123"))
+            .firstName("Bapi")
+            .lastName("Swarnakar")
+            .middleName("")
+            .gender(Gender.MALE)
+            .phone("0000000000")
+            .dateOfBirth(LocalDate.of(1990, 1, 1))
+            .password(passwordEncoder.encode("Test12@#"))
             .email("admin@example.com")
             .roles(Set.of(adminRole))
             .build();
@@ -137,16 +145,26 @@ public class DatabaseSeeder implements CommandLineRunner {
         
         // Manager user
         UserEntity manager = UserEntity.builder()
-            .name("manager")
-            .password(passwordEncoder.encode("Manager@123"))
+            .firstName("Ayan")
+            .middleName("")
+            .lastName("Das")
+            .phone("0123456789")
+            .gender(Gender.MALE)
+            .dateOfBirth(LocalDate.of(1990, 1, 1))
+            .password(passwordEncoder.encode("Test12@#"))
             .email("manager@example.com")
             .roles(Set.of(managerRole))
             .build();
         
         // Regular user
         UserEntity regularUser = UserEntity.builder()
-            .name("user")
-            .password(passwordEncoder.encode("User@123"))
+            .firstName("Sayan")
+            .lastName("Das")
+            .middleName("")
+            .gender(Gender.MALE)
+            .phone("1111111111")
+            .dateOfBirth(LocalDate.of(1990, 1, 1))
+            .password(passwordEncoder.encode("Test12@#"))
             .email("user@example.com")
             .roles(Set.of(userRole))
             .build();

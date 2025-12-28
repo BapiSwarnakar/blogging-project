@@ -1,5 +1,6 @@
 package com.stech.authentication.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,6 +19,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import com.stech.authentication.enums.Gender;
+import com.stech.authentication.enums.UserStatus;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -38,13 +43,38 @@ public class UserEntity {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
+    private String firstName;
+
+    @Column(nullable = false)
+    private String middleName;
+
+    @Column(nullable = false)
+    private String lastName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Gender gender;
+
+    @Column(nullable = false)
+    private String phone;
+
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private LocalDate dateOfBirth;
 
     @Column(nullable = false)
     private String password;
 
-    @Column(unique = true, nullable = false)
-    private String email;
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean isActive = true;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserStatus userStatus = UserStatus.PENDING;
 
     @CreationTimestamp
     @Column(nullable = false)
@@ -77,6 +107,20 @@ public class UserEntity {
         inverseJoinColumns = @JoinColumn(
           name = "permission_id")) 
     private Set<PermissionEntity> directPermissions = new HashSet<>();
+
+    public String getName() {
+        StringBuilder sb = new StringBuilder();
+        if (firstName != null) sb.append(firstName);
+        if (middleName != null && !middleName.isEmpty()) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(middleName);
+        }
+        if (lastName != null) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(lastName);
+        }
+        return sb.toString().trim();
+    }
 
     // Helper methods for managing relationships
     public void addRole(RoleEntity role) {

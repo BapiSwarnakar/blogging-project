@@ -2,7 +2,6 @@ package com.stech.authentication.service.impl;
 
 import java.util.HashSet;
 import java.util.Set;
-
 import java.util.stream.Collectors;
 
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,7 +22,6 @@ import com.stech.authentication.dto.request.RefreshTokenRequest;
 import com.stech.authentication.dto.request.SignupRequest;
 import com.stech.authentication.dto.response.JwtResponse;
 import com.stech.authentication.dto.response.PermissionValidationResponse;
-
 import com.stech.authentication.entity.PermissionEntity;
 import com.stech.authentication.entity.RefreshTokenEntity;
 import com.stech.authentication.entity.RoleEntity;
@@ -115,6 +113,7 @@ public class AuthServiceImpl implements AuthService{
                 .id(userDetails.getId())
                 .email(userDetails.getEmail())
                 .name(userDetails.getUsername())
+                .gender(userDetails.getGender())
                 .permissions(permissions)
                 .roles(roles)
                 .build();
@@ -145,7 +144,12 @@ public class AuthServiceImpl implements AuthService{
         // Create user
         log.debug("Creating user: {}", signUpRequest);
         UserEntity userEntity = UserEntity.builder()
-                    .name(signUpRequest.getName())
+                    .firstName(signUpRequest.getFirstName())
+                    .middleName(signUpRequest.getMiddleName())
+                    .lastName(signUpRequest.getLastName())
+                    .gender(signUpRequest.getGender())
+                    .phone(signUpRequest.getPhone())
+                    .dateOfBirth(signUpRequest.getDateOfBirth())
                     .email(signUpRequest.getEmail())
                     .password(passwordEncoder.encode(signUpRequest.getPassword()))
                     .build();
@@ -198,6 +202,7 @@ public class AuthServiceImpl implements AuthService{
             .id(userEntity.getId())
             .email(userEntity.getEmail())
             .name(userEntity.getName())
+            .gender(userEntity.getGender())
             .permissions(permissions)
             .roles(roleNames)
             .build();
@@ -331,6 +336,7 @@ public class AuthServiceImpl implements AuthService{
                 .id(user.getId())
                 .email(user.getEmail())
                 .name(user.getName())
+                .gender(user.getGender())
                 .permissions(permissions)
                 .roles(roles)
                 .build();

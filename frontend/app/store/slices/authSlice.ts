@@ -21,6 +21,19 @@ export interface AuthResponse {
   errors: string[];
 }
 
+export interface RegisterRequest {
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  email: string;
+  password: string;
+  gender: "MALE" | "FEMALE" | "OTHER";
+  phone: string;
+  dateOfBirth: string; // ISO format YYYY-MM-DD
+  roles?: string[];
+  directPermissions?: string[];
+}
+
 interface AuthState {
   user: UserData | null;
   isLoading: boolean;
@@ -73,6 +86,32 @@ export const loginUser = createAsyncThunk<
   }
 );
 
+export const registerUser = createAsyncThunk<
+  UserData,
+  RegisterRequest,
+  { rejectValue: string }
+>(
+  "auth/register",
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await publicAxios.post<AuthResponse>("/auth/register", userData);
+      if (response.data.status === "SUCCESS") {
+        localStorage.setItem("auth_data", JSON.stringify(response.data.data));
+        return response.data.data;
+      } else {
+        return rejectWithValue(response.data.message || "Registration failed");
+      }
+    } catch (error: any) {
+      const errorMessage = 
+        error.response?.data?.message || 
+        error.response?.data?.errors?.[0] || 
+        error.message || 
+        "Registration failed";
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -106,6 +145,19 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload ?? "Login failed";
+      })
+      .addCase(registerUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(registerUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(registerUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload ?? "Registration failed";
       })
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
