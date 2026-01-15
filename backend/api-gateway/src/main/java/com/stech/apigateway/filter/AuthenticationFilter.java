@@ -1,6 +1,7 @@
 package com.stech.apigateway.filter;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.stech.apigateway.exception.CustomJwtTokenException;
 import com.stech.apigateway.exception.CustomUnauthorizedException;
@@ -57,7 +58,14 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 return validateToken(requestMap)
                         .flatMap(responseEntity -> processValidToken(responseEntity, exchange, authHeader))
                         .then(chain.filter(exchange))
-                        .onErrorResume(WebClientResponseException.class, this::handleWebClientError);
+                        .onErrorResume(WebClientResponseException.class, this::handleWebClientError)
+                        .onErrorResume(e -> {
+                            if (e instanceof CustomJwtTokenException || e instanceof CustomUnauthorizedException) {
+                                return Mono.error(e);
+                            }
+                            log.error("Authentication filter unexpected error: {}", e.getMessage());
+                            return Mono.error(new CustomJwtTokenException("Authentication service is currently unavailable or unreachable"));
+                        });
             } catch (Exception e) {
                 return Mono.error(e);
             }
@@ -109,27 +117,59 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         }
 
         String responseBody = responseEntity.getBody();
-        // log.info("Response Body: {}", responseBody);
-        
-        JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
-        // log.info("Response Body Message processValidToken: {}", jsonResponse);
-        JsonObject data = jsonResponse.get("data").getAsJsonObject();
-        String ipAddress = data.get(IP_ADDRESS).getAsString();
-        String userId = data.get("userId").getAsString();
+        try {
+            if (responseBody == null || responseBody.isBlank()) {
+                return Mono.error(new CustomJwtTokenException("Authentication service returned an empty response"));
+            }
 
-        exchange.getRequest().mutate()
-                .header(IP_ADDRESS, ipAddress)
-                .header("userId", userId)
-                .header(HttpHeaders.AUTHORIZATION, authHeader)
-                .build();
+            JsonElement element = gson.fromJson(responseBody, JsonElement.class);
+            if (!element.isJsonObject()) {
+                return Mono.error(new CustomJwtTokenException("Invalid response format from authentication service"));
+            }
 
-        return Mono.empty();
+            JsonObject jsonResponse = element.getAsJsonObject();
+            if (!jsonResponse.has("data") || jsonResponse.get("data").isJsonNull()) {
+                return Mono.error(new CustomJwtTokenException("Authentication response missing user data"));
+            }
+
+            JsonObject data = jsonResponse.get("data").getAsJsonObject();
+            String ipAddress = data.has(IP_ADDRESS) ? data.get(IP_ADDRESS).getAsString() : "-";
+            String userId = data.has("userId") ? data.get("userId").getAsString() : "unknown";
+
+            exchange.getRequest().mutate()
+                    .header(IP_ADDRESS, ipAddress)
+                    .header("userId", userId)
+                    .header(HttpHeaders.AUTHORIZATION, authHeader)
+                    .build();
+
+            return Mono.empty();
+        } catch (Exception e) {
+            log.error("Failed to parse authentication success response: {}. Error: {}", responseBody, e.getMessage());
+            return Mono.error(new CustomJwtTokenException("Error processing authentication response"));
+        }
     }
 
     private Mono<Void> handleWebClientError(WebClientResponseException ex) {
+        log.error("Authentication service error: Status {}, Body: {}", ex.getStatusCode(), ex.getResponseBodyAsString());
         String messageString = ex.getResponseBodyAsString();
-        JsonObject jsonResponse = gson.fromJson(messageString, JsonObject.class);
-        String message = jsonResponse.get("message").getAsString();
+        String message = "Authentication service error (" + ex.getStatusCode().value() + ")";
+        
+        try {
+            if (messageString != null && !messageString.isBlank()) {
+                JsonElement element = gson.fromJson(messageString, JsonElement.class);
+                if (element.isJsonObject()) {
+                    JsonObject jsonResponse = element.getAsJsonObject();
+                    if (jsonResponse.has("message")) {
+                        message = jsonResponse.get("message").getAsString();
+                    } else if (jsonResponse.has("error")) {
+                        message = jsonResponse.get("error").getAsString();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse authentication error response as JSON: {}", messageString);
+        }
+        
         return Mono.error(new CustomJwtTokenException(message));
     }
 

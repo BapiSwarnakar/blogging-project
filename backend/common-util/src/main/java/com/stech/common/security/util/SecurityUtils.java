@@ -1,6 +1,8 @@
 package com.stech.common.security.util;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,6 +16,50 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public final class SecurityUtils {
 
     public static final String ROLE_PREFIX = "ASSIGN_ROLE_";
+    // Define public endpoints that should skip JWT processing
+    public static final String[] DEFAULT_PUBLIC_URLS = {
+        // Authentication endpoints (public access)
+        "/api/v1/auth/login",
+        "/api/v1/auth/register",
+        "/api/v1/auth/refresh-token",        
+        // Swagger UI v3 (OpenAPI)
+        "/v3/api-docs",
+        "/v3/api-docs/**",
+        "/v3/api-docs.yaml",
+        "/swagger-ui/**",
+        "/swagger-ui.html",
+        "/swagger-ui/index.html",
+        "/swagger-ui/index.html/**",
+        "/webjars/**",
+        "/swagger-resources/**",
+        "/swagger-resources",
+        "/configuration/ui",
+        "/configuration/security",
+        // Actuator endpoints
+        "/actuator/health",
+        "/actuator/info",
+        // API Documentation
+        "/api-docs/**",
+        "/api-docs.yaml",
+        // Other public resources
+        "/favicon.ico",
+        "/error"
+    };
+
+    private static final String[] FRONTEND_URLS = {
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173",
+    };
+
+    public static final List<String> AUTH_ALLOWED_ORIGIN_URLS = Stream.concat(
+        Stream.of("http://localhost:9091", "http://127.0.0.1:9091"),
+        Arrays.stream(FRONTEND_URLS)
+    ).toList();
+
+    public static final List<String> USER_ALLOWED_ORIGIN_URLS = Stream.concat(
+        Stream.of("http://localhost:9092", "http://127.0.0.1:9092"),
+        Arrays.stream(FRONTEND_URLS)
+    ).toList();
 
     private SecurityUtils() {
         // Private constructor to prevent instantiation

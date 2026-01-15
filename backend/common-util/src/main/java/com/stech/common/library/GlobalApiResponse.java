@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.slf4j.MDC;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -15,19 +16,19 @@ import lombok.NoArgsConstructor;
 public class GlobalApiResponse {
 
 	public static <T> ApiResult<T> success(T data, String message) {
-		return new ApiResult<>(ZonedDateTime.now(), "SUCCESS", data, message, Collections.emptyList(), null);
+		return new ApiResult<>(ZonedDateTime.now(), "SUCCESS", data, message, Collections.emptyList(), null, MDC.get("requestId"));
 	}
 
 	public static <T> ApiResult<T> success(T data, String message, PageInfo pageInfo) {
-		return new ApiResult<>(ZonedDateTime.now(), "SUCCESS", data, message, Collections.emptyList(), pageInfo);
+		return new ApiResult<>(ZonedDateTime.now(), "SUCCESS", data, message, Collections.emptyList(), pageInfo, MDC.get("requestId"));
 	}
 
 	public static ApiResult<Object> error(String message, String error) {
-		return new ApiResult<>(ZonedDateTime.now(), "ERROR", null, message, Collections.singletonList(error), null);
+		return new ApiResult<>(ZonedDateTime.now(), "ERROR", null, message, Collections.singletonList(error), null, MDC.get("requestId"));
 	}
 
 	public static ApiResult<Object> error(String message, List<String> errors) {
-		return new ApiResult<>(ZonedDateTime.now(), "ERROR", null, message, errors, null);
+		return new ApiResult<>(ZonedDateTime.now(), "ERROR", null, message, errors, null, MDC.get("requestId"));
 	}
 
 	@Getter
@@ -40,6 +41,7 @@ public class GlobalApiResponse {
 		private final String message;
 		private final List<String> errors;
 		private final PageInfo pageInfo;
+		private final String requestId;
 	}
 
 	@Getter

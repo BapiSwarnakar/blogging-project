@@ -13,6 +13,7 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.stech.common.library.JwtTokenLibrary;
+import com.stech.common.security.util.SecurityUtils;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -28,35 +29,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class CommonJwtAuthenticationFilter extends OncePerRequestFilter {
-
-    // Common public endpoints that should skip JWT processing
-    private static final String[] DEFAULT_PUBLIC_URLS = {
-        // Swagger UI v3 (OpenAPI)
-        "/v3/api-docs",
-        "/v3/api-docs/**",
-        "/v3/api-docs.yaml",
-        "/swagger-ui/**",
-        "/swagger-ui.html",
-        "/swagger-ui/index.html",
-        "/swagger-ui/index.html/**",
-        "/webjars/**",
-        "/swagger-resources/**",
-        "/swagger-resources",
-        "/configuration/ui",
-        "/configuration/security",
-        
-        // Actuator endpoints
-        "/actuator/health",
-        "/actuator/info",
-        
-        // API Documentation
-        "/api-docs/**",
-        "/api-docs.yaml",
-        
-        // Other public resources
-        "/favicon.ico",
-        "/error"
-    };
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
     private String[] additionalPublicUrls = new String[0];
@@ -77,7 +49,7 @@ public class CommonJwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String path = request.getRequestURI();
         log.debug("Checking if request should be filtered: {}", path);
         return isPublicUrl(path);
@@ -151,7 +123,7 @@ public class CommonJwtAuthenticationFilter extends OncePerRequestFilter {
      */
     private boolean isPublicUrl(String requestURI) {
         // Check default public URLs
-        for (String publicUrl : DEFAULT_PUBLIC_URLS) {
+        for (String publicUrl : SecurityUtils.DEFAULT_PUBLIC_URLS) {
             if (pathMatcher.match(publicUrl, requestURI)) {
                 return true;
             }
@@ -172,10 +144,10 @@ public class CommonJwtAuthenticationFilter extends OncePerRequestFilter {
      */
     protected String[] getAllPublicUrls() {
         return Arrays.copyOf(
-            Arrays.stream(DEFAULT_PUBLIC_URLS)
+            Arrays.stream(SecurityUtils.DEFAULT_PUBLIC_URLS)
                 .toList()
                 .toArray(new String[0]), 
-            DEFAULT_PUBLIC_URLS.length + additionalPublicUrls.length
+            SecurityUtils.DEFAULT_PUBLIC_URLS.length + additionalPublicUrls.length
         );
     }
 

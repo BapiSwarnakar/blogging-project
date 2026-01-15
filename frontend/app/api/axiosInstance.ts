@@ -20,6 +20,19 @@ export const privateAxios = axios.create({
   withCredentials: true,
 });
 
+// Request interceptor for adding Request ID to all requests
+const addRequestId = (config: any) => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    config.headers["X-Request-ID"] = crypto.randomUUID();
+  } else {
+    config.headers["X-Request-ID"] = Math.random().toString(36).substring(2, 15);
+  }
+  return config;
+};
+
+publicAxios.interceptors.request.use(addRequestId);
+privateAxios.interceptors.request.use(addRequestId);
+
 // Request interceptor for adding auth token to privateAxios
 privateAxios.interceptors.request.use(
   (config) => {

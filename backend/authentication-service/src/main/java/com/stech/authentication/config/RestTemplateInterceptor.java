@@ -25,6 +25,11 @@ public class RestTemplateInterceptor implements ClientHttpRequestInterceptor {
             if (token != null && !token.isEmpty()) {
                 request.getHeaders().add(HttpHeaders.AUTHORIZATION, token);
             }
+            
+            String requestId = originalRequest.getHeader("X-Request-ID");
+            if (requestId != null && !requestId.isEmpty()) {
+                request.getHeaders().add("X-Request-ID", requestId);
+            }
         }
         
         return execution.execute(request, body);

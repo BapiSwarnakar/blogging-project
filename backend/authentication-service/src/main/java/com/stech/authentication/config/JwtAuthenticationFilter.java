@@ -13,6 +13,7 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.stech.common.library.JwtTokenLibrary;
+import com.stech.common.security.util.SecurityUtils;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -31,43 +32,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    // Define public endpoints that should skip JWT processing
-    private static final String[] PUBLIC_URLS = {
-        // Authentication endpoints (public access)
-        "/api/v1/auth/login",
-        "/api/v1/auth/register",
-        "/api/v1/auth/refresh-token",        
-        // Swagger UI v3 (OpenAPI)
-        "/v3/api-docs",
-        "/v3/api-docs/**",
-        "/v3/api-docs.yaml",
-        "/swagger-ui/**",
-        "/swagger-ui.html",
-        "/swagger-ui/index.html",
-        "/swagger-ui/index.html/**",
-        "/webjars/**",
-        "/swagger-resources/**",
-        "/swagger-resources",
-        "/configuration/ui",
-        "/configuration/security",
-        
-        // Actuator endpoints
-        "/actuator/health",
-        "/actuator/info",
-        
-        // API Documentation
-        "/api-docs/**",
-        "/api-docs.yaml",
-        
-        // Other public resources
-        "/favicon.ico",
-        "/error"
-    };
-    
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String path = request.getRequestURI();
         log.debug("Checking if request should be filtered: {}", path);
         return isPublicUrl(path);
@@ -140,7 +108,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * Check if the request URL matches any of the public URLs
      */
     private boolean isPublicUrl(String requestURI) {
-        for (String publicUrl : PUBLIC_URLS) {
+        for (String publicUrl : SecurityUtils.DEFAULT_PUBLIC_URLS) {
             if (pathMatcher.match(publicUrl, requestURI)) {
                 return true;
             }
