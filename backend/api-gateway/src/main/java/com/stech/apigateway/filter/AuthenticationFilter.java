@@ -43,11 +43,14 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
+            log.info("Authentication filter started");
             if (!validator.isSecured.test(exchange.getRequest())) {
+                log.info("Authentication filter skipped");
                 return chain.filter(exchange);
             }
 
             try {
+                log.info("Authentication filter processing");
                 String authHeader = getAuthorizationHeader(exchange);
                 String token = extractToken(authHeader);
                 String extractedPath = extractApiPath(exchange);
