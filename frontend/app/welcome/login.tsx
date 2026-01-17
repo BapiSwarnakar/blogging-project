@@ -12,7 +12,7 @@ export function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/admin", { replace: true });
+      navigate("/", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -21,7 +21,7 @@ export function Login() {
 
     const resultAction = await dispatch(loginUser({ email, password }));
     if (loginUser.fulfilled.match(resultAction)) {
-      navigate("/admin");
+      navigate("/");
     }
   };
 

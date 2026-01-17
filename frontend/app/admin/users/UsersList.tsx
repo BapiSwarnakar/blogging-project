@@ -73,25 +73,6 @@ export function UsersPage() {
           </Link>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{pageInfo.totalElements}</p>
-          </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Pages</p>
-            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">{pageInfo.totalPages}</p>
-          </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Page</p>
-            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1">{pageInfo.number + 1}</p>
-          </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Page Size</p>
-            <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">{pageInfo.size}</p>
-          </div>
-        </div>
 
         {/* Search and Filter */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm">

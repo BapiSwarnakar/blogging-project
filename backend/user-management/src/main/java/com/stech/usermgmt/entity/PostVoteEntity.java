@@ -1,0 +1,37 @@
+package com.stech.usermgmt.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "blog_post_votes", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"post_id", "user_id"})
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PostVoteEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = false)
+    private PostEntity post;
+
+    @Column(nullable = false)
+    private Long userId;
+
+    @Column(nullable = false)
+    private Integer voteType; // 1 for UP, -1 for DOWN
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+}

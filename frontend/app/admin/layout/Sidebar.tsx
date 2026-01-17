@@ -21,12 +21,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [usersDropdownOpen, setUsersDropdownOpen] = useState(false);
   const [rolesDropdownOpen, setRolesDropdownOpen] = useState(false);
   const [permissionsDropdownOpen, setPermissionsDropdownOpen] = useState(false);
+  const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState(false);
+  const [postsDropdownOpen, setPostsDropdownOpen] = useState(false);
 
   // Auto-expand dropdowns when a child route is active
   useEffect(() => {
     if (location.pathname.startsWith("/admin/users")) setUsersDropdownOpen(true);
     if (location.pathname.startsWith("/admin/roles")) setRolesDropdownOpen(true);
     if (location.pathname.startsWith("/admin/permissions")) setPermissionsDropdownOpen(true);
+    if (location.pathname.startsWith("/admin/categories")) setCategoriesDropdownOpen(true);
+    if (location.pathname.startsWith("/admin/posts")) setPostsDropdownOpen(true);
   }, [location.pathname]);
   
   const isActive = (path: string) => {
@@ -39,11 +43,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isUsersActive = location.pathname.startsWith("/admin/users");
   const isRolesActive = location.pathname.startsWith("/admin/roles");
   const isPermissionsActive = location.pathname.startsWith("/admin/permissions");
+  const isCategoriesActive = location.pathname.startsWith("/admin/categories");
+  const isPostsActive = location.pathname.startsWith("/admin/posts");
 
 
   const handleLogout = async () => {
     await logout(user?.refreshToken);
-    navigate("/login");
+    navigate("/");
   };
 
   return (
@@ -274,6 +280,125 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
             </li>
           )}
+          
+          {/* Categories Dropdown Menu */}
+          <li>
+            <button
+              onClick={() => setCategoriesDropdownOpen(!categoriesDropdownOpen)}
+              className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${isCategoriesActive
+                  ? "text-white bg-blue-600 hover:bg-blue-700"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+            >
+              <div className="flex items-center">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+                </svg>
+                <span className="ml-3">Categories</span>
+              </div>
+              <svg
+                className={`w-4 h-4 transition-transform ${categoriesDropdownOpen ? "rotate-180" : ""}`}
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+
+            {categoriesDropdownOpen && (
+              <ul className="mt-2 space-y-1 pl-4">
+                <li>
+                  <Link
+                    to="/admin/categories"
+                    className={`flex items-center p-2 pl-4 rounded-lg transition-colors ${location.pathname === "/admin/categories"
+                        ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                    View Categories
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/admin/categories/create"
+                    className={`flex items-center p-2 pl-4 rounded-lg transition-colors ${location.pathname === "/admin/categories/create"
+                        ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                    Create Category
+                  </Link>
+                </li>
+              </ul>
+            )}
+          </li>
+
+          {/* Posts Dropdown Menu */}
+          <li>
+            <button
+              onClick={() => setPostsDropdownOpen(!postsDropdownOpen)}
+              className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${isPostsActive
+                  ? "text-white bg-blue-600 hover:bg-blue-700"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+            >
+              <div className="flex items-center">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M7 3a1 1 0 000 2h10a1 1 0 110 2H7a1 1 0 100 2h10a1 1 0 110 2H7a1 1 0 100 2h10a1 1 0 110 2H7a1 1 0 100 2h10a1 1 0 110 2H7a1 1 0 100 2h10a1 1 0 110 2H7a1 1 0 100 2h10a1 1 0 110 2H7a1 1 0 100 2h10a1 1 0 110 2H7a1 1 0 100 2h10a1 1 0 110 2H7a1 1 0 100 2h10a1 1 0 110 2H7a1 1 0 100 2h10a1 1 0 110 2H7a1 1 0 100 2" />
+                  <path d="M3 4a1 1 0 011-1h.01a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h.01a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h.01a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h.01a1 1 0 110 2H4a1 1 0 01-1-1z" />
+                </svg>
+                <span className="ml-3">Posts</span>
+              </div>
+              <svg
+                className={`w-4 h-4 transition-transform ${postsDropdownOpen ? "rotate-180" : ""}`}
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+
+            {postsDropdownOpen && (
+              <ul className="mt-2 space-y-1 pl-4">
+                <li>
+                  <Link
+                    to="/admin/posts"
+                    className={`flex items-center p-2 pl-4 rounded-lg transition-colors ${location.pathname === "/admin/posts"
+                        ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                    View Posts
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/admin/posts/create"
+                    className={`flex items-center p-2 pl-4 rounded-lg transition-colors ${location.pathname === "/admin/posts/create"
+                        ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                    Create Post
+                  </Link>
+                </li>
+              </ul>
+            )}
+          </li>
         </ul>
 
         {/* Footer actions */}

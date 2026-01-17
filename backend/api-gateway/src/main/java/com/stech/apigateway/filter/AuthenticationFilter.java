@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.*;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -60,19 +61,38 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
                 return validateToken(requestMap)
                         .flatMap(responseEntity -> processValidToken(responseEntity, exchange, authHeader))
-                        .then(chain.filter(exchange))
+                        .flatMap(mutatedExchange -> chain.filter(mutatedExchange))
                         .onErrorResume(WebClientResponseException.class, this::handleWebClientError)
                         .onErrorResume(e -> {
                             if (e instanceof CustomJwtTokenException || e instanceof CustomUnauthorizedException) {
                                 return Mono.error(e);
                             }
-                            log.error("Authentication filter unexpected error: {}", e.getMessage());
-                            return Mono.error(new CustomJwtTokenException("Authentication service is currently unavailable or unreachable"));
+                            log.info("Authentication filter unexpected error: {}", e.getMessage());
+                            return Mono.error(new CustomJwtTokenException(getProperServiceUnavailableMessage(e.getMessage())));
                         });
             } catch (Exception e) {
                 return Mono.error(e);
             }
         };
+    }
+
+    /**
+     * Returns a proper service unavailable message based on the service name.
+     * @param message The error message containing the service name.
+     * @return A proper service unavailable message.
+     */
+    private String getProperServiceUnavailableMessage(String message) {
+        if(message.contains("API-GATEWAY")) {
+            return "API Gateway service is currently unavailable or unreachable";
+        } else if(message.contains("AUTH-SERVICE")) {
+            return "Authentication service is currently unavailable or unreachable";
+        } else if(message.contains("USER-SERVICE")) {
+            return "User service is currently unavailable or unreachable";
+        } else if(message.contains("PAYMENT-SERVICE")){
+            return "Payment service is currently unavailable or unreachable";
+        }else{
+            return "Currently unavailable or unreachable";
+        }
     }
 
     private String getAuthorizationHeader(ServerWebExchange exchange) {
@@ -99,6 +119,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         return requestMap;
     }
 
+    @SuppressWarnings("null")
     private Mono<ResponseEntity<String>> validateToken(Map<String, String> requestMap) {
         return webClientBuilder.build()
                 .post()
@@ -110,7 +131,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 .toEntity(String.class);
     }
 
-    private Mono<Void> processValidToken(ResponseEntity<String> responseEntity, ServerWebExchange exchange, String authHeader) {
+    private Mono<ServerWebExchange> processValidToken(ResponseEntity<String> responseEntity, ServerWebExchange exchange, String authHeader) {
         HttpStatusCode status = responseEntity.getStatusCode();
         if (!status.is2xxSuccessful()) {
             String errorMsg = status.is4xxClientError() 
@@ -138,14 +159,15 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
             JsonObject data = jsonResponse.get("data").getAsJsonObject();
             String ipAddress = data.has(IP_ADDRESS) ? data.get(IP_ADDRESS).getAsString() : "-";
             String userId = data.has("userId") ? data.get("userId").getAsString() : "unknown";
-
-            exchange.getRequest().mutate()
+            log.info("IP Address: {}", ipAddress);
+            log.info("User ID: {}", userId);
+            ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                     .header(IP_ADDRESS, ipAddress)
-                    .header("userId", userId)
+                    .header("X-User-Id", userId)
                     .header(HttpHeaders.AUTHORIZATION, authHeader)
                     .build();
 
-            return Mono.empty();
+            return Mono.just(exchange.mutate().request(mutatedRequest).build());
         } catch (Exception e) {
             log.error("Failed to parse authentication success response: {}. Error: {}", responseBody, e.getMessage());
             return Mono.error(new CustomJwtTokenException("Error processing authentication response"));
