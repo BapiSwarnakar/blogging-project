@@ -14,5 +14,6 @@ export default [
     route("admin/permissions", "routes/admin/permissions/list.tsx"),
     route("admin/permissions/create", "routes/admin/permissions/create.tsx"),
     route("admin/permissions/:id/edit", "routes/admin/permissions/edit.tsx"),
+    route("posts/:id", "routes/post.tsx"),
     route("*", "routes/$.tsx"), // Catch-all route for 404
 ] satisfies RouteConfig;

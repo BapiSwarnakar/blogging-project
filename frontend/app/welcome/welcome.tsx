@@ -1,50 +1,89 @@
 import logoDark from "./logo-dark.svg";
 import logoLight from "./logo-light.svg";
+import { Link } from "react-router";
+import { PostList } from "./post/PostList";
+import { Navbar } from "./Navbar";
+import { HeroTypewriter } from "./HeroTypewriter";
 
 export function Welcome() {
   return (
-    <main className="flex items-center justify-center pt-16 pb-4">
-      <div className="flex-1 flex flex-col items-center gap-16 min-h-0">
-        <header className="flex flex-col items-center gap-9">
-          <div className="w-[500px] max-w-[100vw] p-4">
-            <img
-              src={logoLight}
-              alt="React Router"
-              className="block w-full dark:hidden"
-            />
-            <img
-              src={logoDark}
-              alt="React Router"
-              className="hidden w-full dark:block"
-            />
+    <main className="min-h-screen bg-[#fafafa] dark:bg-gray-950 transition-colors duration-500">
+      <Navbar />
+
+      {/* Hero Section */}
+      <header className="relative pt-20 pb-12 overflow-hidden">
+        <div className="absolute top-0 right-0 -z-10 w-1/2 h-full bg-gradient-to-b from-blue-50/50 to-transparent dark:from-blue-900/10 opacity-50 blur-3xl rounded-full"></div>
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-widest mb-6">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            </span>
+            Stay Updated
           </div>
-        </header>
-        <div className="max-w-[300px] w-full space-y-6 px-4">
-          <nav className="rounded-3xl border border-gray-200 p-6 dark:border-gray-700 space-y-4">
-            <p className="leading-6 text-gray-700 dark:text-gray-200 text-center">
-              What&apos;s next?
-            </p>
-            <ul>
-              {resources.map(({ href, text, icon }) => (
-                <li key={href}>
-                  <a
-                    className="group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500"
-                    href={href}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {icon}
-                    {text}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <h1 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white mb-6 tracking-tight">
+            Insights for the<br />
+            <HeroTypewriter />
+          </h1>
         </div>
-      </div>
+      </header>
+
+      {/* Main Content (Post List) */}
+      <section className="relative">
+        <PostList />
+      </section>
+
+      {/* Premium Footer */}
+      <footer className="mt-20 py-20 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div className="col-span-1 md:col-span-2">
+            <Link to="/" className="w-40 block mb-6">
+              <img
+                src={logoLight}
+                alt="Logo"
+                className="block w-full dark:hidden"
+              />
+              <img
+                src={logoDark}
+                alt="Logo"
+                className="hidden w-full dark:block"
+              />
+            </Link>
+            <p className="text-gray-500 dark:text-gray-400 max-w-sm mb-8 leading-relaxed">
+              Bringing you the best of technology, design, and lifestyle insights. 
+              Join our community of over 50,000 readers.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6">Resources</h4>
+            <ul className="space-y-4 text-gray-500 dark:text-gray-400">
+              <li><a href="https://reactrouter.com/docs" target="_blank" rel="noreferrer" className="hover:text-blue-600 transition-colors">Documentation</a></li>
+              <li><a href="https://rmx.as/discord" target="_blank" rel="noreferrer" className="hover:text-blue-600 transition-colors">Community</a></li>
+              <li><Link to="/login" className="hover:text-blue-600 transition-colors">Account</Link></li>
+              <li><Link to="/admin" className="hover:text-blue-600 transition-colors">Admin Panel</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6">Connect</h4>
+            <div className="flex gap-4">
+              {/* Reuse Social components if needed or just simple links here */}
+              <a href="#" className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all">
+                <svg fill="currentColor" viewBox="0 0 24 24" className="w-5 h-5"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-0.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" /></svg>
+              </a>
+              <a href="#" className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center hover:bg-sky-500 hover:text-white transition-all">
+                <svg fill="currentColor" viewBox="0 0 24 24" className="w-5 h-5"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.84 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" /></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 mt-20 pt-8 border-t border-gray-100 dark:border-gray-800 text-center text-sm text-gray-500">
+          © 2026 Blog Project. All rights reserved. Built with Passion.
+        </div>
+      </footer>
     </main>
   );
 }
+
 
 const resources = [
   {
