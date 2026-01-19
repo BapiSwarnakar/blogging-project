@@ -40,7 +40,7 @@ public class WebSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(SecurityUtils.DEFAULT_PUBLIC_URLS).permitAll()
-                .requestMatchers("/api/v1/users/**").authenticated()
+                .requestMatchers("/api/v1/user/**").authenticated()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

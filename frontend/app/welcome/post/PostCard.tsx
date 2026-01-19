@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router';
 
 export interface Post {
   id: string;
@@ -9,7 +10,11 @@ export interface Post {
   date: string;
   category: string;
   image: string;
+  authorId?: number;
   type: 'public' | 'private';
+  voteCount?: number;
+  viewCount?: number;
+  commentCount?: number;
 }
 
 interface PostCardProps {
@@ -18,10 +23,9 @@ interface PostCardProps {
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
-  // Mocking some stats for StackOverflow look
-  const votes = Math.floor(Math.random() * 50);
-  const answers = Math.floor(Math.random() * 10);
-  const views = Math.floor(Math.random() * 500);
+  // Using post stats if available, otherwise fallback to 0
+  const votes = post.voteCount ?? 0;
+  const views = post.viewCount ?? 0;
 
   return (
     <div 
@@ -34,10 +38,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
           <span className="font-medium">{votes}</span>
           <span className="text-[11px] sm:text-xs">votes</span>
         </div>
-        <div className={`flex flex-row sm:flex-col items-center gap-1 sm:gap-0 px-2 py-1 rounded border ${answers > 0 ? 'border-green-600 text-green-600 dark:border-green-500 dark:text-green-500' : 'text-gray-600 dark:text-gray-400 border-transparent'}`}>
-          <span className="font-medium">{answers}</span>
-          <span className="text-[11px] sm:text-xs">answers</span>
-        </div>
         <div className="flex flex-row sm:flex-col items-center gap-1 sm:gap-0 text-amber-700 dark:text-amber-500">
           <span className="font-medium">{views}</span>
           <span className="text-[11px] sm:text-xs">views</span>
@@ -46,9 +46,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
 
       {/* Content area */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-lg text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors mb-1 font-normal line-clamp-2">
+        <Link 
+          to={`/posts/${post.id}`}
+          className="text-lg text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors mb-1 font-normal line-clamp-2 block"
+          onClick={(e) => e.stopPropagation()}
+        >
           {post.title}
-        </h3>
+        </Link>
         
         <p className="text-gray-700 dark:text-gray-300 text-sm mb-3 line-clamp-2 leading-relaxed">
           {post.excerpt}
@@ -72,7 +76,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
               {post.author.charAt(0)}
             </div>
             <div className="flex flex-col">
-              <span className="text-blue-600 dark:text-blue-400 hover:underline">{post.author}</span>
+              <Link 
+                to={`/profile/${post.authorId || 'unknown'}`}
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {post.author}
+              </Link>
               <span className="text-gray-500">asked {post.date}</span>
             </div>
           </div>

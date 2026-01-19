@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface PostVoteRepository extends JpaRepository<PostVoteEntity, Long> {
     Optional<PostVoteEntity> findByPostIdAndUserId(Long postId, Long userId);
+    Optional<PostVoteEntity> findByPostIdAndIpAddress(Long postId, String ipAddress);
+    Optional<PostVoteEntity> findByPostIdAndIpAddressAndUserIdIsNull(Long postId, String ipAddress);
 }

@@ -96,7 +96,7 @@ public class CommonJwtAuthenticationFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
                             username,
-                            null,
+                            jwt,
                             authorities
                         );
 

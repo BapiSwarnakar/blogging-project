@@ -1,23 +1,66 @@
 import React, { useEffect } from 'react';
-import type { Post } from './PostCard';
+import { useParams } from 'react-router';
+import { useAppDispatch, useAppSelector } from '~/store/hooks';
+import { fetchPostById, clearCurrentPost, votePost, incrementPostView, bookmarkPost } from '~/store/slices/postsSlice';
 import { SocialIcons } from './SocialIcons';
 import { CommentSection } from './CommentSection';
 import { Navbar } from '../Navbar';
 
 interface PostDetailProps {
-  post: Post;
   onBack: () => void;
 }
 
-export const PostDetail: React.FC<PostDetailProps> = ({ post, onBack }) => {
+export const PostDetail: React.FC<PostDetailProps> = ({ onBack }) => {
+  const { id } = useParams<{ id: string }>();
+  const dispatch = useAppDispatch();
+  const { currentPost: post, isLoading, error } = useAppSelector((state) => state.posts);
+
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    if (id) {
+      const postId = Number(id);
+      dispatch(fetchPostById(postId));
+      // Increment view when post is loaded
+      dispatch(incrementPostView(postId));
+    }
+    return () => {
+      dispatch(clearCurrentPost());
+    };
+  }, [id, dispatch]);
 
-  // Mocking some stats for SO look
-  const askedDate = post.date;
-  const viewedCount = Math.floor(Math.random() * 5000) + 1000;
-  const activeDays = Math.floor(Math.random() * 30);
+  const handleVote = (type: number) => {
+    if (id) {
+      dispatch(votePost({ id: Number(id), type }));
+    }
+  };
+
+  const handleBookmark = () => {
+    if (id) {
+      dispatch(bookmarkPost(Number(id)));
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#fafafa] dark:bg-gray-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error || !post) {
+    return (
+      <div className="min-h-screen bg-[#fafafa] dark:bg-gray-950 flex items-center justify-center flex-col gap-4">
+        <p className="text-gray-600 dark:text-gray-400">{error || 'Post not found'}</p>
+        <button onClick={onBack} className="text-blue-600 hover:underline">Go Back</button>
+      </div>
+    );
+  }
+
+  // Adaptive mapping for backend data structure
+  const askedDate = new Date(post.createdAt).toLocaleDateString();
+  const viewedCount = post.viewCount ?? 0;
+  const activeDays = Math.floor((new Date().getTime() - new Date(post.createdAt).getTime()) / (1000 * 3600 * 24)) || 0;
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-gray-950 transition-colors duration-500">
@@ -59,15 +102,31 @@ export const PostDetail: React.FC<PostDetailProps> = ({ post, onBack }) => {
           <div className="flex gap-4">
             {/* Voting Column */}
             <div className="flex flex-col items-center gap-4 w-12 flex-shrink-0">
-              <button className="p-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-gray-400 hover:text-orange-600 transition-all">
+              <button 
+                onClick={() => handleVote(1)}
+                className="p-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-gray-400 hover:text-orange-600 transition-all active:scale-95"
+                title="Upvote"
+              >
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" /></svg>
               </button>
-              <span className="text-xl font-bold text-gray-700 dark:text-gray-300">42</span>
-              <button className="p-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-gray-400 hover:text-orange-600 transition-all">
+              <span className="text-xl font-bold text-gray-700 dark:text-gray-300">
+                {post.voteCount ?? 0}
+              </span>
+              <button 
+                onClick={() => handleVote(-1)}
+                className="p-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-gray-400 hover:text-orange-600 transition-all active:scale-95"
+                title="Downvote"
+              >
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
               </button>
-              <button className="mt-2 text-gray-400 hover:text-orange-600">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" /></svg>
+              <button 
+                onClick={handleBookmark}
+                className={`mt-2 transition-colors ${post.isBookmarked ? 'text-orange-600' : 'text-gray-400 hover:text-orange-600'}`}
+                title={post.isBookmarked ? "Remove Bookmark" : "Add Bookmark"}
+              >
+                <svg className="w-6 h-6" fill={post.isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
               </button>
             </div>
 
@@ -96,7 +155,7 @@ export const PostDetail: React.FC<PostDetailProps> = ({ post, onBack }) => {
               <div className="mt-8 flex flex-wrap items-start justify-between gap-6">
                 <div className="flex gap-2">
                   <span className="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 cursor-pointer">
-                    {post.category.toLowerCase()}
+                    {post.category?.name.toLowerCase()}
                   </span>
                 </div>
                 
@@ -104,11 +163,11 @@ export const PostDetail: React.FC<PostDetailProps> = ({ post, onBack }) => {
                   <div className="p-3 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded w-48">
                     <span className="text-[11px] text-gray-500 mb-1 block">asked {askedDate}</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded bg-gradient-to-tr from-orange-400 to-red-500 flex items-center justify-center font-bold text-white shadow-sm">
-                        {post.author.charAt(0)}
+                      <div className="w-8 h-8 rounded bg-gradient-to-tr from-orange-400 to-red-500 flex items-center justify-center font-bold text-white shadow-sm uppercase">
+                        {post.authorName?.charAt(0) || 'A'}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">{post.author}</span>
+                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">{post.authorName || 'Anonymous'}</span>
                         <div className="flex items-center gap-1">
                           <span className="text-[10px] font-bold text-gray-600">3,450</span>
                           <span className="text-[10px] text-gray-400">reputation</span>
@@ -120,7 +179,7 @@ export const PostDetail: React.FC<PostDetailProps> = ({ post, onBack }) => {
                 </div>
               </div>
 
-              <CommentSection postId={post.id} />
+              <CommentSection postId={post.id.toString()} />
             </div>
           </div>
         </div>
@@ -137,7 +196,7 @@ export const PostDetail: React.FC<PostDetailProps> = ({ post, onBack }) => {
                 <button 
                   key={cat}
                   onClick={onBack}
-                  className={`px-2 py-1 text-[11px] rounded transition-colors ${post.category === cat ? 'bg-orange-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'}`}
+                  className={`px-2 py-1 text-[11px] rounded transition-colors ${post.category?.name === cat ? 'bg-orange-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'}`}
                 >
                   {cat}
                 </button>

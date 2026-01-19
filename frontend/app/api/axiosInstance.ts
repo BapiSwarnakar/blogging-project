@@ -36,15 +36,17 @@ privateAxios.interceptors.request.use(addRequestId);
 // Request interceptor for adding auth token to privateAxios
 privateAxios.interceptors.request.use(
   (config) => {
-    const data = localStorage.getItem("auth_data");
-    if (data) {
-      try {
-        const { accessToken } = JSON.parse(data);
-        if (accessToken) {
-          config.headers.Authorization = `Bearer ${accessToken}`;
+    if (typeof window !== 'undefined') {
+      const data = localStorage.getItem("auth_data");
+      if (data) {
+        try {
+          const { accessToken } = JSON.parse(data);
+          if (accessToken) {
+            config.headers.Authorization = `Bearer ${accessToken}`;
+          }
+        } catch (e) {
+          console.error("Error parsing auth data from localStorage", e);
         }
-      } catch (e) {
-        console.error("Error parsing auth data from localStorage", e);
       }
     }
     return config;
@@ -89,32 +91,35 @@ privateAxios.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const data = localStorage.getItem("auth_data");
-        if (data) {
-          const { refreshToken } = JSON.parse(data);
-          
-          // Using standard axios here to avoid interceptors on the refresh call
-          const response = await axios.post(`${baseURL}/auth/refresh-token`, {
-            refreshToken: refreshToken
-          });
+        if (typeof window !== 'undefined') {
+          const data = localStorage.getItem("auth_data");
+          if (data) {
+            const { refreshToken } = JSON.parse(data);
+            
+            // Using standard axios here to avoid interceptors on the refresh call
+            const response = await axios.post(`${baseURL}/auth/refresh-token`, {
+              refreshToken: refreshToken
+            });
 
-          if (response.data.status === "SUCCESS") {
-            const newData = response.data.data;
-            localStorage.setItem("auth_data", JSON.stringify(newData));
-            
-            // Dispatch custom event to sync with Redux if needed, 
-            // but for now updating localStorage is the source for next requests
-            processQueue(null, newData.accessToken);
-            
-            originalRequest.headers.Authorization = `Bearer ${newData.accessToken}`;
-            return privateAxios(originalRequest);
+            if (response.data.status === "SUCCESS") {
+              const newData = response.data.data;
+              localStorage.setItem("auth_data", JSON.stringify(newData));
+              
+              // Dispatch custom event to sync with Redux if needed, 
+              // but for now updating localStorage is the source for next requests
+              processQueue(null, newData.accessToken);
+              
+              originalRequest.headers.Authorization = `Bearer ${newData.accessToken}`;
+              return privateAxios(originalRequest);
+            }
           }
         }
       } catch (refreshError) {
         processQueue(refreshError, null);
-        // Clear storage and redirect to login if refresh fails
-        localStorage.removeItem("auth_data");
-        window.location.href = "/login";
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem("auth_data");
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

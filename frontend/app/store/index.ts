@@ -5,6 +5,7 @@ import permissionsReducer from "./slices/permissionsSlice";
 import usersReducer from "./slices/usersSlice";
 import categoriesReducer from "./slices/categoriesSlice";
 import postsReducer from "./slices/postsSlice";
+import commentsReducer from "./slices/commentsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     users: usersReducer,
     categories: categoriesReducer,
     posts: postsReducer,
+    comments: commentsReducer,
   },
 });
 

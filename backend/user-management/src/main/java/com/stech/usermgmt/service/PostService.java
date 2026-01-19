@@ -12,4 +12,7 @@ public interface PostService {
     PostResponse getPostById(Long id);
     Page<PostResponse> getAllPosts(PostEntity.PostType type, String search, Pageable pageable);
     void deletePost(Long id, Long userId);
+    PostResponse votePost(Long id, Long userId, String ipAddress, Integer voteType);
+    void incrementView(Long id, Long userId, String ipAddress);
+    PostResponse toggleBookmark(Long id, Long userId);
 }

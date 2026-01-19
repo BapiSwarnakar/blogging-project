@@ -18,12 +18,14 @@ public class PostResponse {
     private String excerpt;
     private String content;
     private Long authorId;
+    private String authorName;
     private CategoryResponse category;
     private String image;
     private PostEntity.PostType type;
     private Integer viewCount;
     private Integer voteCount;
-    private Integer answerCount;
+    private Integer commentCount;
+    private boolean isBookmarked;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

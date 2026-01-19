@@ -32,7 +32,7 @@ public class WebSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(SecurityUtils.DEFAULT_PUBLIC_URLS).permitAll()
-                .requestMatchers("/api/v1/public/**").permitAll()
+                .requestMatchers("/api/v1/auth/public/**").permitAll()
                 .requestMatchers("/api/v1/auth/**").authenticated()
                 .anyRequest().authenticated()
             )

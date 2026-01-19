@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.stech.common.library.JwtTokenLibrary;
 
 /**
  * Security Utility class for common security operations
@@ -21,7 +22,8 @@ public final class SecurityUtils {
         // Authentication endpoints (public access)
         "/api/v1/auth/login",
         "/api/v1/auth/register",
-        "/api/v1/auth/refresh-token",        
+        "/api/v1/auth/refresh-token",
+        "/api/v1/user/public/**", 
         // Swagger UI v3 (OpenAPI)
         "/v3/api-docs",
         "/v3/api-docs/**",
@@ -73,6 +75,23 @@ public final class SecurityUtils {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             return authentication.getName();
+        }
+        return null;
+    }
+
+    /**
+     * Get the current authenticated user ID from JWT token
+     * @return userId or null if not authenticated
+     */
+    public static Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getCredentials() != null) {
+            try {
+                String token = authentication.getCredentials().toString();
+                return JwtTokenLibrary.getUserIdFromToken(token);
+            } catch (Exception e) {
+                return null;
+            }
         }
         return null;
     }

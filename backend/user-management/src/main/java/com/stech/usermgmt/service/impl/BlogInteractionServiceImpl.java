@@ -14,10 +14,8 @@ import java.util.Optional;
 public class BlogInteractionServiceImpl implements BlogInteractionService {
 
     private final PostRepository postRepository;
-    private final AnswerRepository answerRepository;
     private final PostViewRepository postViewRepository;
     private final PostVoteRepository postVoteRepository;
-    private final AnswerVoteRepository answerVoteRepository;
 
     @Override
     @Transactional
@@ -73,35 +71,5 @@ public class BlogInteractionServiceImpl implements BlogInteractionService {
         postRepository.save(post);
     }
 
-    @Override
-    @Transactional
-    public void voteAnswer(Long answerId, Long userId, Integer voteType) {
-        AnswerEntity answer = answerRepository.findById(answerId)
-                .orElseThrow(() -> new RuntimeException("Answer not found"));
 
-        Optional<AnswerVoteEntity> existingVote = answerVoteRepository.findByAnswerIdAndUserId(answerId, userId);
-
-        if (existingVote.isPresent()) {
-            AnswerVoteEntity vote = existingVote.get();
-            answer.setVoteCount(answer.getVoteCount() - vote.getVoteType());
-            
-            if (vote.getVoteType().equals(voteType)) {
-                answerVoteRepository.delete(vote);
-            } else {
-                vote.setVoteType(voteType);
-                answerVoteRepository.save(vote);
-                answer.setVoteCount(answer.getVoteCount() + voteType);
-            }
-        } else {
-            AnswerVoteEntity vote = AnswerVoteEntity.builder()
-                    .answer(answer)
-                    .userId(userId)
-                    .voteType(voteType)
-                    .build();
-            answerVoteRepository.save(vote);
-            answer.setVoteCount(answer.getVoteCount() + voteType);
-        }
-        
-        answerRepository.save(answer);
-    }
 }

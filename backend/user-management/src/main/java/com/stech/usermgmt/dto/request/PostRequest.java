@@ -15,4 +15,5 @@ public class PostRequest {
     private Long categoryId;
     private String image;
     private PostEntity.PostType type;
+    private String authorName;
 }

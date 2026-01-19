@@ -6,54 +6,42 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "blog_posts")
+@Table(name = "blog_comments")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PostEntity {
+public class CommentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String title;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = false)
+    private PostEntity post;
 
-    @Column(columnDefinition = "TEXT")
-    private String excerpt;
-
-    @Column(nullable = false, columnDefinition = "LONGTEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @Column(nullable = false)
-    private Long authorId; // ID from auth-service user
+    private Long authorId;
 
     @Column(nullable = false)
     private String authorName;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
-    private CategoryEntity category;
+    @JoinColumn(name = "parent_id")
+    private CommentEntity parentComment;
 
-    @Column
-    private String image;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private PostType type = PostType.PUBLIC;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Integer viewCount = 0;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Integer voteCount = 0;
+    private List<CommentEntity> replies = new ArrayList<>();
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -66,8 +54,4 @@ public class PostEntity {
     @Builder.Default
     @Column(nullable = false)
     private boolean isDeleted = false;
-
-    public enum PostType {
-        PUBLIC, PRIVATE
-    }
 }

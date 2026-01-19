@@ -41,6 +41,17 @@ public class JwtTokenLibrary {
         return claims.getSubject();
     }
 
+    public static Long getUserIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        String id = claims.getId();
+        return id != null ? Long.parseLong(id) : null;
+    }
+
     public static boolean validateToken(String authToken) {
         try {
             Jwts.parserBuilder()

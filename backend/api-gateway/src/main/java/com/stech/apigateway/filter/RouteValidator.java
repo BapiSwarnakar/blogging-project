@@ -25,7 +25,9 @@ public class RouteValidator {
             Pattern.compile("^/api/v1/auth/forget-password$"),
             Pattern.compile("^/api/v1/auth/confirm-forget-password$"),
             Pattern.compile("^/eureka$"),
-            Pattern.compile("^/api/v1/int/bdc/validate-phone-number$")    
+            // Allow /public and anything under it
+            Pattern.compile("^/api/v1/user/public(/.*)?$"),
+            Pattern.compile("^/api/v1/auth/public(/.*)?$")  
         );
 
     public final Predicate<ServerHttpRequest> isSecured =

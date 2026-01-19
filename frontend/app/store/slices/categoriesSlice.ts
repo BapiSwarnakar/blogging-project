@@ -26,8 +26,8 @@ export const fetchCategories = createAsyncThunk(
   "categories/fetchCategories",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await privateAxios.get("/user/blog/categories");
-      return response.data;
+      const response = await privateAxios.get("/user/public/categories");
+      return response.data.data || response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to fetch categories");
     }
@@ -39,7 +39,7 @@ export const fetchCategory = createAsyncThunk(
   async (id: number, { rejectWithValue }) => {
     try {
       const response = await privateAxios.get(`/user/blog/categories/${id}`);
-      return response.data;
+      return response.data.data || response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to fetch category");
     }
@@ -51,7 +51,7 @@ export const createCategory = createAsyncThunk(
   async (payload: { name: string; description: string }, { rejectWithValue }) => {
     try {
       const response = await privateAxios.post("/user/blog/categories", payload);
-      return response.data;
+      return response.data.data || response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to create category");
     }
@@ -63,7 +63,7 @@ export const updateCategory = createAsyncThunk(
   async ({ id, payload }: { id: number; payload: { name: string; description: string } }, { rejectWithValue }) => {
     try {
       const response = await privateAxios.put(`/user/blog/categories/${id}`, payload);
-      return response.data;
+      return response.data.data || response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to update category");
     }

@@ -25,8 +25,11 @@ public class PostVoteEntity {
     @JoinColumn(name = "post_id", nullable = false)
     private PostEntity post;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Long userId;
+
+    @Column(nullable = false)
+    private String ipAddress;
 
     @Column(nullable = false)
     private Integer voteType; // 1 for UP, -1 for DOWN

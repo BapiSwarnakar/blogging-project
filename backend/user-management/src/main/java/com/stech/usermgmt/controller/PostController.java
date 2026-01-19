@@ -1,80 +1,75 @@
 package com.stech.usermgmt.controller;
 
-import com.stech.common.permissions.UserManagementServicePermissionList;
-import com.stech.common.security.annotation.RequirePermission;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.stech.common.library.GlobalApiResponse;
+import com.stech.common.security.util.SecurityUtils;
 import com.stech.usermgmt.dto.request.PostRequest;
 import com.stech.usermgmt.dto.response.PostResponse;
-import com.stech.usermgmt.entity.PostEntity;
 import com.stech.usermgmt.service.PostService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/user/blog/posts")
-@Slf4j
+@RequiredArgsConstructor
 public class PostController {
 
     private final PostService postService;
 
-    PostController(
-        PostService postService) {
-        this.postService = postService;
-    }
-
     @PostMapping
-    @RequirePermission(authority = UserManagementServicePermissionList.POST_WRITE)
-    public ResponseEntity<PostResponse> createPost(
-            @RequestBody PostRequest request, 
-            @RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(postService.createPost(request, userId));
+    public ResponseEntity<GlobalApiResponse.ApiResult<PostResponse>> createPost(@RequestBody PostRequest request) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(GlobalApiResponse.success(postService.createPost(request, userId), "Post created successfully"));
     }
 
     @PutMapping("/{id}")
-    @RequirePermission(authority = UserManagementServicePermissionList.POST_UPDATE)
-    public ResponseEntity<PostResponse> updatePost(
-            @PathVariable Long id, 
-            @RequestBody PostRequest request,
-            @RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(postService.updatePost(id, request, userId));
-    }
-
-    @GetMapping("/{id}")
-    @RequirePermission(authority = UserManagementServicePermissionList.POST_READ)
-    public ResponseEntity<PostResponse> getPostById(@PathVariable Long id) {
-        return ResponseEntity.ok(postService.getPostById(id));
-    }
-
-    @GetMapping
-    @RequirePermission(authority = UserManagementServicePermissionList.POST_READ)
-    public ResponseEntity<Page<PostResponse>> getAllPosts(
-            @RequestParam(required = false) PostEntity.PostType type,
-            @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction) {
-        
-        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        return ResponseEntity.ok(postService.getAllPosts(type, search, pageable));
+    public ResponseEntity<GlobalApiResponse.ApiResult<PostResponse>> updatePost(
+            @PathVariable Long id,
+            @RequestBody PostRequest request) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(GlobalApiResponse.success(postService.updatePost(id, request, userId), "Post updated successfully"));
     }
 
     @DeleteMapping("/{id}")
-    @RequirePermission(authority = UserManagementServicePermissionList.POST_DELETE)
-    public ResponseEntity<Void> deletePost(
-            @PathVariable Long id,
-            @RequestHeader("X-User-Id") Long userId) {
+    public ResponseEntity<GlobalApiResponse.ApiResult<Object>> deletePost(@PathVariable Long id) {
+        Long userId = SecurityUtils.getCurrentUserId();
         postService.deletePost(id, userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(GlobalApiResponse.success(null, "Post deleted successfully"));
+    }
+
+    @PostMapping("/{id}/vote")
+    public ResponseEntity<GlobalApiResponse.ApiResult<PostResponse>> votePost(
+            @PathVariable Long id,
+            @RequestParam Integer type,
+            HttpServletRequest request) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        String ipAddress = request.getRemoteAddr();
+        return ResponseEntity.ok(GlobalApiResponse.success(postService.votePost(id, userId, ipAddress, type), "Vote submitted successfully"));
+    }
+
+    @PostMapping("/{id}/view")
+    public ResponseEntity<GlobalApiResponse.ApiResult<Object>> incrementView(
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        String ipAddress = request.getRemoteAddr();
+        postService.incrementView(id, userId, ipAddress);
+        return ResponseEntity.ok(GlobalApiResponse.success(null, "View count incremented successfully"));
+    }
+
+    @PostMapping("/{id}/bookmark")
+    public ResponseEntity<GlobalApiResponse.ApiResult<PostResponse>> bookmarkPost(@PathVariable Long id) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(GlobalApiResponse.success(postService.toggleBookmark(id, userId), "Post bookmarked successfully"));
     }
 }

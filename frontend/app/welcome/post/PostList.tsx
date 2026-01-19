@@ -1,94 +1,54 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PostCard } from './PostCard';
-import type { Post } from './PostCard';
 import { useNavigate } from 'react-router';
+import { useAppDispatch, useAppSelector } from '~/store/hooks';
+import { fetchCategories } from '~/store/slices/categoriesSlice';
+import { fetchPosts, type Post as PostFromSlice } from '~/store/slices/postsSlice';
 
-export const MOCK_POSTS: Post[] = [
-  {
-    id: '1',
-    title: 'How to implement sub-millisecond response times in Edge Computing?',
-    excerpt: 'I am trying to optimize my frontend architecture for 2026 standards. Currently facing latency with AI agent orchestration.',
-    content: 'The landscape of web development is evolving at an unprecedented pace. In 2026, we are seeing the convergence of artificial intelligence and traditional frontend frameworks...\n\nEdge computing has become the standard, allowing for sub-millisecond response times. Developers are now orchestrating sophisticated AI agents that handle everything from state management to performance optimization.\n\nDesign systems are becoming truly fluid, adapting in real-time to user preferences and accessibility needs without manual intervention.',
-    author: 'Sam Altman',
-    date: 'Jan 15, 2026',
-    category: 'Technology',
-    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=2072',
-    type: 'public'
-  },
-  {
-    id: '2',
-    title: 'Best practices for creating "conscious" minimalist UI designs?',
-    excerpt: 'Looking for principles of conscious minimalism that combine modern aesthetics with warmth. Any advice on textures?',
-    content: 'Minimalism is often misunderstood as living in empty, sterile spaces. However, the new era of minimalism focuses on "conscious living"...\n\nTextures are replacing colors as the primary way to create depth. Natural materials like reclaimed wood, linen, and hand-beaten copper are leading the trend.\n\nSmart homes are being integrated invisibly, ensuring technology serves the aesthetic rather than detracting from it.',
-    author: 'Elena Rossi',
-    date: 'Jan 12, 2026',
-    category: 'Lifestyle',
-    image: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=2074',
-    type: 'public'
-  },
-  {
-    id: '4',
-    title: 'What is the psychological impact of teals and indigos in professional UI?',
-    excerpt: 'I know blue invokes trust, but what about the intermediate hues? How do they affect the "vibe" of a professional app?',
-    content: 'Colors are the silent language of the web. Understanding their psychological impact is crucial for any designer...\n\nBlue invokes trust, which is why it dominates fintech and healthcare. Red creates urgency, perfect for flash sales and critical alerts.\n\nBut the real magic happens in the intermediate hues—the teals, the indigos, and the warm grays that define the "vibe" of a professional application.',
-    author: 'Sarah Jenkins',
-    date: 'Jan 08, 2026',
-    category: 'Design',
-    image: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=2070',
-    type: 'public'
-  },
-  {
-    id: '5',
-    title: 'Are vertical forests the future of sustainable urban architecture?',
-    excerpt: 'Exploring case studies of skyscrapers that act as air filters and oxygen producers. How effective are they?',
-    content: 'Cities are often seen as the antithesis of nature. Vertical forests are changing that narrative...\n\nBy integrating thousands of plants into the facade of skyscrapers, architects are reducing local temperatures by up to 3 degrees Celsius.\n\nThese buildings act as giant air filters, trapping particulate matter and producing hundreds of kilograms of oxygen daily.',
-    author: 'Marcus Thorne',
-    date: 'Jan 05, 2026',
-    category: 'Environment',
-    image: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&q=80&w=2070',
-    type: 'public'
-  }
-];
 
-const CATEGORIES = ['Technology', 'Lifestyle', 'Design', 'Environment', 'Architecture'];
+
+
 
 export const PostList: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const { categories } = useAppSelector((state) => state.categories);
+  const { posts, pageInfo, isLoading } = useAppSelector((state) => state.posts);
   const navigate = useNavigate();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'votes'>('newest');
   const [currentPage, setCurrentPage] = useState(1);
-  const postsPerPage = 3;
+  const postsPerPage = 5;
 
-  const filteredPosts = useMemo(() => {
-    let result = MOCK_POSTS.filter(post => post.type !== 'private');
+  useEffect(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(post => 
-        post.title.toLowerCase().includes(query) || 
-        post.excerpt.toLowerCase().includes(query) ||
-        post.author.toLowerCase().includes(query)
-      );
-    }
-
-    if (selectedCategories.length > 0) {
-      result = result.filter(post => selectedCategories.includes(post.category));
-    }
-
-    if (sortBy === 'newest') {
-      result = [...result].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    } else if (sortBy === 'oldest') {
-      result = [...result].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    }
+  useEffect(() => {
+    const direction = sortBy === 'oldest' ? 'asc' : 'desc';
+    const sortField = sortBy === 'votes' ? 'voteCount' : 'createdAt';
     
-    return result;
-  }, [selectedCategories, sortBy, searchQuery]);
+    dispatch(fetchPosts({
+      page: currentPage - 1,
+      size: postsPerPage,
+      search: searchQuery,
+      sortBy: sortField,
+      direction: direction,
+      type: 'PUBLIC'
+    }));
+  }, [dispatch, currentPage, searchQuery, sortBy]);
 
-  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
-  const indexOfLastPost = currentPage * postsPerPage;
-  const indexOfFirstPost = indexOfLastPost - postsPerPage;
-  const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
+  // Client-side category filtering since backend might not support it yet in search
+  const filteredPosts = useMemo(() => {
+    if (selectedCategories.length > 0) {
+      return posts.filter(post => selectedCategories.includes(post.category.name));
+    }
+    return posts;
+  }, [posts, selectedCategories]);
+
+  const totalPages = pageInfo.totalPages;
+  const currentPosts = filteredPosts;
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -96,9 +56,9 @@ export const PostList: React.FC = () => {
   }, [searchQuery, selectedCategories, sortBy]);
 
   const toggleCategory = (category: string) => {
-    setSelectedCategories(prev => 
+    setSelectedCategories((prev: string[]) => 
       prev.includes(category) 
-        ? prev.filter(c => c !== category) 
+        ? prev.filter((c: string) => c !== category) 
         : [...prev, category]
     );
   };
@@ -148,15 +108,37 @@ export const PostList: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 divide-y divide-gray-200 dark:divide-gray-800 shadow-sm">
-            {currentPosts.map((post) => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
-                onClick={(p) => navigate(`/posts/${p.id}`)} 
-              />
-            ))}
-            {currentPosts.length === 0 && (
+          <div className="bg-white dark:bg-gray-950 rounded border border-gray-200 dark:border-gray-800 divide-y divide-gray-200 dark:divide-gray-800 shadow-sm min-h-[400px]">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-600"></div>
+              </div>
+            ) : (
+              <>
+                {currentPosts.map((post: PostFromSlice) => (
+                  <PostCard 
+                    key={post.id} 
+                    post={{
+                      id: post.id.toString(),
+                      title: post.title,
+                      excerpt: post.excerpt,
+                      content: post.content,
+                      author: post.authorName || 'Anonymous', 
+                      authorId: post.authorId,
+                      date: new Date(post.createdAt).toLocaleDateString(),
+                      category: post.category?.name || 'General',
+                      image: post.image || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=2072',
+                      type: (post.type?.toLowerCase() === 'private' ? 'private' : 'public') as 'public' | 'private',
+                      voteCount: post.voteCount,
+                      viewCount: post.viewCount,
+                      commentCount: post.commentCount
+                    }} 
+                    onClick={() => navigate(`/posts/${post.id}`)} 
+                  />
+                ))}
+              </>
+            )}
+            {!isLoading && currentPosts.length === 0 && (
               <div className="p-12 text-center">
                 <p className="text-gray-500 mb-2">We couldn&apos;t find anything matching your search.</p>
                 <button onClick={() => setSearchQuery('')} className="text-blue-600 hover:underline text-sm">Clear search</button>
@@ -169,7 +151,7 @@ export const PostList: React.FC = () => {
             <div className="mt-8 flex items-center gap-1">
               <button
                 disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onClick={() => setCurrentPage((prev: number) => Math.max(prev - 1, 1))}
                 className={`px-2 py-1 rounded border text-xs font-normal transition-colors ${currentPage === 1 ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-gray-700 border-gray-300 hover:bg-gray-100'}`}
               >
                 Prev
@@ -187,7 +169,7 @@ export const PostList: React.FC = () => {
 
               <button
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                onClick={() => setCurrentPage((prev: number) => Math.min(prev + 1, totalPages))}
                 className={`px-2 py-1 rounded border text-xs font-normal transition-colors ${currentPage === totalPages ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-gray-700 border-gray-300 hover:bg-gray-100'}`}
               >
                 Next
@@ -204,21 +186,24 @@ export const PostList: React.FC = () => {
               Filter by Category
             </h3>
             <div className="space-y-3">
-              {CATEGORIES.map(category => (
-                <label key={category} className="flex items-center gap-3 cursor-pointer group">
+              {categories.map(category => (
+                <label key={category.id} className="flex items-center gap-3 cursor-pointer group">
                   <div className="relative flex items-center">
                     <input 
                       type="checkbox" 
                       className="peer h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 transition-all cursor-pointer accent-orange-500"
-                      checked={selectedCategories.includes(category)}
-                      onChange={() => toggleCategory(category)}
+                      checked={selectedCategories.includes(category.name)}
+                      onChange={() => toggleCategory(category.name)}
                     />
                   </div>
                   <span className="text-xs text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                    {category}
+                    {category.name}
                   </span>
                 </label>
               ))}
+              {categories.length === 0 && (
+                <p className="text-[10px] text-gray-400 italic">No categories available</p>
+              )}
             </div>
           </div>
 
@@ -229,8 +214,8 @@ export const PostList: React.FC = () => {
             </h3>
             <div className="space-y-2 text-[11px] text-amber-900 dark:text-amber-300 opacity-80">
               <div className="flex justify-between">
-                <span>Posts analyzed:</span>
-                <span className="font-bold">{MOCK_POSTS.length}</span>
+                <span>Total Posts:</span>
+                <span className="font-bold">{pageInfo.totalElements}</span>
               </div>
               <div className="flex justify-between">
                 <span>Public visibility:</span>

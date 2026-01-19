@@ -10,12 +10,14 @@ export interface Post {
   excerpt: string;
   content: string;
   authorId: number;
+  authorName: string;
   category: Category;
   image: string;
   type: PostType;
   viewCount: number;
   voteCount: number;
-  answerCount: number;
+  commentCount: number;
+  isBookmarked: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -73,11 +75,11 @@ export const fetchPosts = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await privateAxios.get(`/user/blog/posts`, {
+      const response = await privateAxios.get(`/user/public/posts`, {
         params: { page, size, sortBy, direction, search, type },
       });
-      // Page response structure from Spring Data JPA
-      return response.data;
+      // Extract data from GlobalApiResponse
+      return response.data.data || response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to fetch posts");
     }
@@ -88,8 +90,8 @@ export const fetchPostById = createAsyncThunk(
   "posts/fetchPostById",
   async (id: number, { rejectWithValue }) => {
     try {
-      const response = await privateAxios.get(`/user/blog/posts/${id}`);
-      return response.data;
+      const response = await privateAxios.get(`/user/public/posts/${id}`);
+      return response.data.data || response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to fetch post");
     }
@@ -101,7 +103,7 @@ export const createPost = createAsyncThunk(
   async (payload: PostRequest, { rejectWithValue }) => {
     try {
       const response = await privateAxios.post("/user/blog/posts", payload);
-      return response.data;
+      return response.data.data || response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to create post");
     }
@@ -113,7 +115,7 @@ export const updatePost = createAsyncThunk(
   async ({ id, payload }: { id: number; payload: PostRequest }, { rejectWithValue }) => {
     try {
       const response = await privateAxios.put(`/user/blog/posts/${id}`, payload);
-      return response.data;
+      return response.data.data || response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to update post");
     }
@@ -128,6 +130,42 @@ export const deletePost = createAsyncThunk(
       return id;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to delete post");
+    }
+  }
+);
+
+export const votePost = createAsyncThunk(
+  "posts/votePost",
+  async ({ id, type }: { id: number; type: number }, { rejectWithValue }) => {
+    try {
+      const response = await privateAxios.post(`/user/public/posts/${id}/vote?type=${type}`);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || "Failed to vote");
+    }
+  }
+);
+
+export const incrementPostView = createAsyncThunk(
+  "posts/incrementPostView",
+  async (id: number, { rejectWithValue }) => {
+    try {
+      await privateAxios.post(`/user/public/posts/${id}/view`);
+      return id;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || "Failed to increment view");
+    }
+  }
+);
+
+export const bookmarkPost = createAsyncThunk(
+  "posts/bookmarkPost",
+  async (id: number, { rejectWithValue }) => {
+    try {
+      const response = await privateAxios.post(`/user/blog/posts/${id}/bookmark`);
+      return response.data.data || response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || "Failed to bookmark");
     }
   }
 );
@@ -169,7 +207,7 @@ const postsSlice = createSlice({
       })
       .addCase(fetchPostById.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.currentPost = action.payload.data ? action.payload.data : action.payload;
+        state.currentPost = action.payload;
       })
       .addCase(fetchPostById.rejected, (state, action) => {
         state.isLoading = false;
@@ -200,6 +238,26 @@ const postsSlice = createSlice({
       .addCase(deletePost.fulfilled, (state, action) => {
         state.posts = state.posts.filter((post) => post.id !== action.payload);
         state.pageInfo.totalElements -= 1;
+      })
+      .addCase(votePost.fulfilled, (state, action) => {
+        const updatedPost = action.payload;
+        if (state.currentPost && state.currentPost.id === updatedPost.id) {
+          state.currentPost = updatedPost;
+        }
+        const index = state.posts.findIndex(p => p.id === updatedPost.id);
+        if (index !== -1) {
+          state.posts[index] = updatedPost;
+        }
+      })
+      .addCase(bookmarkPost.fulfilled, (state, action) => {
+        const updatedPost = action.payload;
+        if (state.currentPost && state.currentPost.id === updatedPost.id) {
+          state.currentPost = updatedPost;
+        }
+        const index = state.posts.findIndex(p => p.id === updatedPost.id);
+        if (index !== -1) {
+          state.posts[index] = updatedPost;
+        }
       });
   },
 });

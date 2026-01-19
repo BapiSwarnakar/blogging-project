@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.stech.common.security.annotation.RequirePermission;
+import com.stech.common.library.GlobalApiResponse;
 
 
 @RestController
@@ -14,26 +14,20 @@ import com.stech.common.security.annotation.RequirePermission;
 public class UserController {
 
     // Use permission slug from database
-    @RequirePermission(authority = "USER_READ")
     @GetMapping("/me")
-    public ResponseEntity<String> getUser() {
-        return ResponseEntity.ok("User details");
+    public ResponseEntity<GlobalApiResponse.ApiResult<String>> getUser() {
+        return ResponseEntity.ok(GlobalApiResponse.success("User details", "User fetched successfully"));
     }
 
-    // Use role name (Spring Security adds ROLE_ prefix automatically)
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
-    public ResponseEntity<String> getAllUsers() {
-        return ResponseEntity.ok("All users");
+    public ResponseEntity<GlobalApiResponse.ApiResult<String>> getAllUsers() {
+        return ResponseEntity.ok(GlobalApiResponse.success("All users", "Users fetched successfully"));
     }
 
     @GetMapping("/internal/all")
-    public ResponseEntity<String> getAllUsersInternal() {
-        try {
-            return ResponseEntity.status(200).body("All users");
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Failed to get all users");
-        }
+    public ResponseEntity<GlobalApiResponse.ApiResult<String>> getAllUsersInternal() {
+        return ResponseEntity.ok(GlobalApiResponse.success("All users", "Users fetched successfully"));
     }
     
 }
