@@ -6,6 +6,7 @@ import usersReducer from "./slices/usersSlice";
 import categoriesReducer from "./slices/categoriesSlice";
 import postsReducer from "./slices/postsSlice";
 import commentsReducer from "./slices/commentsSlice";
+import pricingReducer from "./slices/pricingSlice";
 
 export const store = configureStore({
   reducer: {
@@ -16,9 +17,11 @@ export const store = configureStore({
     categories: categoriesReducer,
     posts: postsReducer,
     comments: commentsReducer,
+    pricing: pricingReducer,
   },
 });
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 export type AppStore = typeof store;
+

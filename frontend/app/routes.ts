@@ -4,6 +4,8 @@ export default [
     index("routes/home.tsx"),
     route("login", "routes/login.tsx"),
     route("signup", "routes/signup.tsx"),
+    route("pricing", "routes/pricing.tsx"),
+    route("checkout", "routes/checkout.tsx"),
     route("admin", "routes/admin/dashboard.tsx"),
     route("admin/users", "routes/admin/users/list.tsx"),
     route("admin/users/create", "routes/admin/users/create.tsx"),
@@ -23,3 +25,4 @@ export default [
     route("posts/:id", "routes/post.tsx"),
     route("*", "routes/$.tsx"), // Catch-all route for 404
 ] satisfies RouteConfig;
+

@@ -50,8 +50,10 @@ export const Navbar: React.FC = () => {
         <div className="hidden md:flex items-center gap-8 text-sm font-medium">
           <Link to="/" className="hover:text-blue-600 dark:text-gray-300 dark:hover:text-white transition-colors">Explorer</Link>
           <a href="#" className="hover:text-blue-600 dark:text-gray-300 dark:hover:text-white transition-colors">Trending</a>
+          <Link to="/pricing" className="hover:text-blue-600 dark:text-gray-300 dark:hover:text-white transition-colors">Pricing</Link>
           <a href="#" className="hover:text-blue-600 dark:text-gray-300 dark:hover:text-white transition-colors">Categories</a>
         </div>
+
 
         <div className="flex items-center gap-4">
           {isAuthenticated ? (

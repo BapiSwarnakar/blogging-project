@@ -14,6 +14,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.stech.common.security.filter.CommonJwtAuthenticationFilter;
+import com.stech.common.security.util.SecurityUtils;
 
 /**
  * Security configuration for payment-service
@@ -22,29 +23,6 @@ import com.stech.common.security.filter.CommonJwtAuthenticationFilter;
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
-
-    // List of paths that don't require authentication
-    private static final String[] PUBLIC_PATHS = {
-        // Swagger UI v3 (OpenAPI)
-        "/v3/api-docs/**",
-        "/v3/api-docs.yaml",
-        "/swagger-ui/**",
-        "/swagger-ui.html",
-        "/swagger-ui/index.html",
-        "/swagger-ui/index.html/**",
-        "/webjars/**",
-        "/swagger-resources/**",
-        "/swagger-resources",
-        "/configuration/ui",
-        "/configuration/security",
-        "/favicon.ico",
-        "/error",
-        // Actuator endpoints
-        "/actuator/**",
-        // API Documentation
-        "/api-docs/**",
-        "/api-docs.yaml"
-    };
 
     /**
      * Create CommonJwtAuthenticationFilter bean
@@ -63,7 +41,7 @@ public class WebSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers(PUBLIC_PATHS).permitAll()
+                .requestMatchers(SecurityUtils.DEFAULT_PUBLIC_URLS).permitAll()
                 // All payment endpoints require authentication
                 .requestMatchers("/api/v1/payments/**").authenticated()
                 // Everything else requires authentication

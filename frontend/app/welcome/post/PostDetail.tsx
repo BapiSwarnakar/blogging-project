@@ -10,6 +10,8 @@ interface PostDetailProps {
   onBack: () => void;
 }
 
+import { Footer } from '../Footer';
+
 export const PostDetail: React.FC<PostDetailProps> = ({ onBack }) => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
@@ -251,6 +253,7 @@ export const PostDetail: React.FC<PostDetailProps> = ({ onBack }) => {
         </aside>
       </div>
       </div>
+      <Footer />
     </div>
   );
 };

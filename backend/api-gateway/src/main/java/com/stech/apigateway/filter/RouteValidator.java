@@ -27,7 +27,8 @@ public class RouteValidator {
             Pattern.compile("^/eureka$"),
             // Allow /public and anything under it
             Pattern.compile("^/api/v1/user/public(/.*)?$"),
-            Pattern.compile("^/api/v1/auth/public(/.*)?$")  
+            Pattern.compile("^/api/v1/auth/public(/.*)?$"),
+            Pattern.compile("^/api/v1/payment/public(/.*)?$")
         );
 
     public final Predicate<ServerHttpRequest> isSecured =

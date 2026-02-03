@@ -58,6 +58,7 @@ export function Layout({ children }: { readonly children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
         <ScrollRestoration />
         <Scripts />
       </body>

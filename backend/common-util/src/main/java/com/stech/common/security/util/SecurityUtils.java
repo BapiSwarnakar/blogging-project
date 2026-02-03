@@ -23,7 +23,9 @@ public final class SecurityUtils {
         "/api/v1/auth/login",
         "/api/v1/auth/register",
         "/api/v1/auth/refresh-token",
+        "/api/v1/auth/public/**",
         "/api/v1/user/public/**", 
+        "/api/v1/payment/public/**", 
         // Swagger UI v3 (OpenAPI)
         "/v3/api-docs",
         "/v3/api-docs/**",
